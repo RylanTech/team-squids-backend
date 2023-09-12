@@ -3,8 +3,19 @@ import { verifyUser } from "../services/authService";
 import { Event } from "../models/event";
 import { Church } from "../models/church";
 import { ChurchUser } from "../models/churchUser";
-import { Op } from "sequelize";
-import { getUser } from "./churchUserController";
+import multer from "multer";
+
+const path = require('path')
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'Images')
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + path.extname(file.originalname))
+  }
+})
+const upload = multer({storage: storage})
+
 
 export const getAllEvents: RequestHandler = async (req, res, next) => {
 
@@ -136,6 +147,8 @@ export const createEvent: RequestHandler = async (req, res, next) => {
 
     const newEvent: Event = req.body;
 
+
+
     const church: Church | null = await Church.findByPk(newEvent.churchId);
 
     if (!church) {
@@ -146,34 +159,42 @@ export const createEvent: RequestHandler = async (req, res, next) => {
       return res.status(401).send("Not authorized");
     }
     
-
     if (typeof newEvent.location !== "string") {
       newEvent.location = JSON.stringify(newEvent.location);
     }
 
-    if (
-      newEvent.eventTitle &&
-      newEvent.date &&
-      newEvent.location &&
-      newEvent.eventType &&
-      newEvent.description &&
-      newEvent.imageUrl
-    ) {
-      let created = await Event.create(newEvent);
-
-      // If location is a string, parse it
-      if (typeof created.location === "string") {
-        created.location = JSON.parse(created.location);
+    
+    upload.single('image')(req, res, async (err) => {
+      if (err) {
+        return res.status(400).json({ error: 'Image upload failed.' });
       }
 
-      res.status(201).json(created);
-    } else {
-      res.status(400).send();
-    }
+      // If there is a file uploaded, you can access its information using req.file
+      if (req.file) {
+        newEvent.imageUrl = `https://churchhive.net/Images/${req.file.filename}` // Store the image filename in your newEvent object
+      }
+
+      // ... Continue with the rest of your code ...
+
+      if (
+        newEvent.eventTitle &&
+        newEvent.date &&
+        newEvent.location &&
+        newEvent.eventType &&
+        newEvent.description &&
+        newEvent.imageUrl
+      ) {
+
+        
+        let created = await Event.create(newEvent);
+
+        res.status(201).json(created);
+      } else {
+        res.status(400).send();
+      }
+    });
   } catch (error: any) {
-    res
-      .status(500)
-      .send(error.message || "Some error occurred while creating the Event.");
+    res.status(500).send(error)
   }
 };
 
