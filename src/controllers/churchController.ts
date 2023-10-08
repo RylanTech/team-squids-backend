@@ -53,6 +53,7 @@ export const getChurch: RequestHandler = async (req, res, next) => {
           model: ChurchUser,
         },
       ],
+      limit: 20,
     });
 
     // Parse location string for each church

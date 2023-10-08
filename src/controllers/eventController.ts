@@ -27,6 +27,7 @@ export const getAllEvents: RequestHandler = async (req, res, next) => {
           include: [ChurchUser],
         },
       ],
+      limit: 20
     });
 
     // Parse location string for each church
@@ -111,7 +112,7 @@ export const getTenEvents: RequestHandler = async (req, res, next) => {
 
   try {
     let events: Event[] = await Event.findAll({
-      limit: 10,
+      limit: 15,
       offset: 0,
       include: [
         {

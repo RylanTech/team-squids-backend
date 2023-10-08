@@ -22,8 +22,8 @@ export const searchChurch: RequestHandler = async (req, res, next) => {
           Sequelize.where(Sequelize.fn('LOWER', Sequelize.col('location')), 'LIKE', `%${query.toLowerCase()}%`),
           Sequelize.where(Sequelize.fn('LOWER', Sequelize.col('denomination')), 'LIKE', `%${query.toLowerCase()}%`),
         ]
-      }
-
+      },
+      limit: 15,
     });
 
     resultsDB = resultsDB.map((church) => {
@@ -34,7 +34,6 @@ export const searchChurch: RequestHandler = async (req, res, next) => {
     });
 
     res.status(200).json(resultsDB);
-    console.log(resultsDB);
   } catch (err) {
     res.status(404).json({ error: 'Database search query failed' });
   }
@@ -64,8 +63,7 @@ export const searchEvent: RequestHandler = async (req, res, next) => {
 
         ]
       },
-      
-    
+      limit: 15.
     });
 
     resultsDB = resultsDB.map((event) => {
@@ -76,7 +74,6 @@ export const searchEvent: RequestHandler = async (req, res, next) => {
     });
 
     res.status(200).json(resultsDB);
-    console.log(resultsDB);
   } catch (err) {
     res.status(500).json(err);
   }

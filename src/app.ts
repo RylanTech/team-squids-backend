@@ -35,7 +35,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 // Routing Middleware
-app.use('/api/church',churchRoutes);
+app.use('/api/church', churchRoutes);
 app.use('/api/user', churchUserRoutes);
 app.use('/api/key', apiRoutes)
 // app.use('/api/search', locationRoutes); 
@@ -71,7 +71,7 @@ app.post("/api/event/upload-image", upload.single("image"), async (req, res) => 
 app.use('/api/event', eventRoutes);
 
 app.use(( req: Request, res: Response, next: NextFunction ) => {
-  res.status(404).send("This is not the URL you are looking for!");
+  res.status(404).send("error");
 })
 
 
