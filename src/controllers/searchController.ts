@@ -50,6 +50,37 @@ export const searchEvent: RequestHandler = async (req, res, next) => {
     return res.status(400).json({ error: 'Search query must have at least 3 characters' });
   }
   try {
+    const currentDate = new Date();
+    const prevDay = new Date(currentDate);
+    prevDay.setDate(currentDate.getDate() - 2);
+
+    let checkResultsDB = await Event.findAll({
+      include: [{
+        model:Church
+      }],
+      where: {
+        [Op.or]: [
+          Sequelize.where(Sequelize.fn('LOWER', Sequelize.col('Event.location')), 'LIKE', `%${query.toLowerCase()}%`),
+          Sequelize.where(Sequelize.fn('LOWER', Sequelize.col('eventType')), 'LIKE', `%${query.toLowerCase()}%`),
+          Sequelize.where(Sequelize.fn('LOWER', Sequelize.col('churchName')), 'LIKE', `%${query.toLowerCase()}%`),
+          Sequelize.where(Sequelize.fn('LOWER', Sequelize.col('eventTitle')), 'LIKE', `%${query.toLowerCase()}%`),
+          //  Sequelize.where(Sequelize.fn('LOWER', Sequelize.col('date')), 'LIKE', `%${query.toLowerCase()}%`),
+        ],
+        date: {
+          [Op.lte]: prevDay, // Filter events with date equal to the day after the current day
+        },
+      },
+      limit: 15,
+    });
+
+    if (checkResultsDB) {
+      checkResultsDB.map((event) => {
+        Event.destroy({
+          where: {eventId: event.eventId}
+        })
+      })
+    }
+
     let resultsDB = await Event.findAll({
       include: [{
         model:Church

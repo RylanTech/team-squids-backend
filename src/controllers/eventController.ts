@@ -4,6 +4,7 @@ import { Event } from "../models/event";
 import { Church } from "../models/church";
 import { ChurchUser } from "../models/churchUser";
 import multer from "multer";
+import { Op } from "sequelize";
 
 const path = require('path')
 const storage = multer.diskStorage({
@@ -14,31 +15,54 @@ const storage = multer.diskStorage({
     cb(null, Date.now() + path.extname(file.originalname))
   }
 })
-const upload = multer({storage: storage})
+const upload = multer({ storage: storage })
 
 
 export const getAllEvents: RequestHandler = async (req, res, next) => {
-
   try {
-    let events: Event[] = await Event.findAll({
+    const currentDate = new Date();
+    const prevDay = new Date(currentDate);
+    prevDay.setDate(currentDate.getDate() - 2);
+
+    let events = await Event.findAll({
+      where: {
+        date: {
+          [Op.lte]: prevDay, // Filter events with date equal to the day after the current day
+        },
+      },
+      limit: 20,
+    });
+
+    if (events) {
+      events.map((event) => {
+        Event.destroy({
+          where: { eventId: event.eventId }
+        })
+      })
+    }
+
+    let updatedEvents = await Event.findAll({
       include: [
         {
           model: Church,
           include: [ChurchUser],
         },
       ],
+      order: [
+        ['date', 'ASC']
+      ],
       limit: 20
     });
 
     // Parse location string for each church
-    events = events.map((event) => {
+    updatedEvents = updatedEvents.map((event) => {
       if (typeof event.location === "string") {
         event.location = JSON.parse(event.location);
       }
       return event;
     });
 
-    res.json(events);
+    res.json(updatedEvents);
   } catch (error: any) {
     res
       .status(500)
@@ -47,9 +71,13 @@ export const getAllEvents: RequestHandler = async (req, res, next) => {
 };
 
 export const getEvent: RequestHandler = async (req, res, next) => {
-
   try {
+
     const eventId = req.params.eventId;
+
+    const currentDate = new Date();
+    const prevDay = new Date(currentDate);
+    prevDay.setDate(currentDate.getDate() - 2);
 
     let event = await Event.findByPk(eventId, {
       include: [
@@ -65,6 +93,12 @@ export const getEvent: RequestHandler = async (req, res, next) => {
       return res.status(404).send("Error: Event not found");
     }
 
+    if (event.date < prevDay) {
+      Event.destroy({
+        where: { eventId: event.eventId }
+      })
+    }
+
     if (typeof event.location === "string") {
       event.location = JSON.parse(event.location);
     }
@@ -78,7 +112,10 @@ export const getEvent: RequestHandler = async (req, res, next) => {
 };
 export const getUserEvents: RequestHandler = async (req, res, next) => {
 
-  // const currentDate = new Date().toISOString().slice(0, 10);
+  const currentDate = new Date();
+  const prevDay = new Date(currentDate);
+  prevDay.setDate(currentDate.getDate() - 2);
+
   let userId = req.params.userId;
   let events = await Event.findAll({
     include: [
@@ -92,6 +129,15 @@ export const getUserEvents: RequestHandler = async (req, res, next) => {
       },
     ],
   });
+
+  events.map((event) => {
+    if (event.date < prevDay) {
+      Event.destroy({
+        where: { eventId: event.eventId }
+      })
+    }
+  })
+
   // If location is a string, parse it
   events = events.map((event) => {
     if (typeof event.location === "string") {
@@ -100,16 +146,12 @@ export const getUserEvents: RequestHandler = async (req, res, next) => {
     return event;
   });
 
-
-
   res.status(200).json(events);
 }
 
 
 
 export const getTenEvents: RequestHandler = async (req, res, next) => {
-
-
   try {
     let events: Event[] = await Event.findAll({
       limit: 15,
@@ -148,8 +190,6 @@ export const createEvent: RequestHandler = async (req, res, next) => {
 
     const newEvent: Event = req.body;
 
-
-
     const church: Church | null = await Church.findByPk(newEvent.churchId);
 
     if (!church) {
@@ -159,12 +199,12 @@ export const createEvent: RequestHandler = async (req, res, next) => {
     if (church.userId !== user.userId) {
       return res.status(401).send("Not authorized");
     }
-    
+
     if (typeof newEvent.location !== "string") {
       newEvent.location = JSON.stringify(newEvent.location);
     }
 
-    
+
     upload.single('image')(req, res, async (err) => {
       if (err) {
         return res.status(400).json({ error: 'Image upload failed.' });
@@ -186,7 +226,7 @@ export const createEvent: RequestHandler = async (req, res, next) => {
         newEvent.imageUrl
       ) {
 
-        
+
         let created = await Event.create(newEvent);
 
         res.status(201).json(created);
@@ -216,7 +256,7 @@ export const updateEvent: RequestHandler = async (req, res, next) => {
 
     let matchingEvent = await Event.findByPk(eventId);
     if (!matchingEvent) {
-        return res.status(401).send("Not the same church")
+      return res.status(401).send("Not the same church")
     } else {
       // Make sure the same user who created it is editing
       let churchId = req.body.churchId;
@@ -236,16 +276,16 @@ export const updateEvent: RequestHandler = async (req, res, next) => {
       editEventData.imageUrl &&
       editEventData.location
     ) {
-  await Event.update(editEventData, { where: { eventId: eventId } });
-  return res.status(200).send("Event edited");
-} else {
-  return res.status(400).json();
-}
+      await Event.update(editEventData, { where: { eventId: eventId } });
+      return res.status(200).send("Event edited");
+    } else {
+      return res.status(400).json();
+    }
   } catch (error: any) {
-  res
-    .status(500)
-    .send(error.message || "Some error occurred while editing the Event.");
-}
+    res
+      .status(500)
+      .send(error.message || "Some error occurred while editing the Event.");
+  }
 };
 
 export const deleteEvent: RequestHandler = async (req, res, next) => {
