@@ -59,6 +59,7 @@ export const searchEvent: RequestHandler = async (req, res, next) => {
           Sequelize.where(Sequelize.fn('LOWER', Sequelize.col('Event.location')), 'LIKE', `%${query.toLowerCase()}%`),
           Sequelize.where(Sequelize.fn('LOWER', Sequelize.col('eventType')), 'LIKE', `%${query.toLowerCase()}%`),
           Sequelize.where(Sequelize.fn('LOWER', Sequelize.col('churchName')), 'LIKE', `%${query.toLowerCase()}%`),
+          Sequelize.where(Sequelize.fn('LOWER', Sequelize.col('eventTitle')), 'LIKE', `%${query.toLowerCase()}%`),
           //  Sequelize.where(Sequelize.fn('LOWER', Sequelize.col('date')), 'LIKE', `%${query.toLowerCase()}%`),
 
         ]
