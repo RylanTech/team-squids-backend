@@ -53,6 +53,9 @@ export const getChurch: RequestHandler = async (req, res, next) => {
           model: ChurchUser,
         },
       ],
+      order: [
+        ['createdAt', 'DESC']
+      ],
       limit: 20,
     });
 
@@ -234,39 +237,39 @@ export const editChurch: RequestHandler = async (req, res, next) => {
         return res.status(400).json();
       }
     }
-   } catch (error: any) {
-      res.status(500).send(error.message || "Some error occurred while editing the Church.");
+  } catch (error: any) {
+    res.status(500).send(error.message || "Some error occurred while editing the Church.");
+  }
+};
+
+export const deleteChurch: RequestHandler = async (req, res, next) => {
+  try {
+    let user: ChurchUser | null = await verifyUser(req);
+    if (!user) {
+      return res.status(403).send();
     }
-  };
 
-  export const deleteChurch: RequestHandler = async (req, res, next) => {
-    try {
-      let user: ChurchUser | null = await verifyUser(req);
-      if (!user) {
-        return res.status(403).send();
+    let churchId = req.params.id;
+    let churchFound = await Church.findByPk(churchId);
+
+    // Make sure same user who created it can delete
+    let userId = req.body.userId;
+    let userFound = await ChurchUser.findByPk(churchFound?.userId);
+    if (!userFound || userFound.dataValues.userId !== user.userId) {
+      if (user.userType !== "admin") {
+        return res.status(403).send("Not the same user");
       }
-
-      let churchId = req.params.id;
-      let churchFound = await Church.findByPk(churchId);
-
-      // Make sure same user who created it can delete
-      let userId = req.body.userId;
-      let userFound = await ChurchUser.findByPk(churchFound?.userId);
-      if (!userFound || userFound.dataValues.userId !== user.userId) {
-        if (user.userType !== "admin") {
-          return res.status(403).send("Not the same user");
-        }
-      }
-
-      if (churchFound) {
-        await Church.destroy({
-          where: { churchId: churchId },
-        });
-        res.status(200).json();
-      } else {
-        res.status(404).json();
-      }
-    } catch (error: any) {
-      res.status(500).send(error.message || "Some error occurred while deleting the Church.");
     }
-  };
+
+    if (churchFound) {
+      await Church.destroy({
+        where: { churchId: churchId },
+      });
+      res.status(200).json();
+    } else {
+      res.status(404).json();
+    }
+  } catch (error: any) {
+    res.status(500).send(error.message || "Some error occurred while deleting the Church.");
+  }
+};
