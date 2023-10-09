@@ -16,21 +16,31 @@ export const allUser: RequestHandler = async (req, res, next) => {
 };
 
 export const createUser: RequestHandler = async (req, res, next) => {
-  let newUser: ChurchUser = req.body;
+  let user = await verifyUser(req);
+  
+  if (user) {
+    if (user.userType !== "admin") {
+      return res.status(403).send("Not an Admin");
+    };
 
-  if (newUser.email && newUser.password) {
-    // hashPass will go here
-    let hashedPassword = await hashPassword(newUser.password);
-    newUser.password = hashedPassword;
-    newUser.userType = "user";
+    let newUser: ChurchUser = req.body;
 
-    let create = await ChurchUser.create(newUser);
-    res.status(200).json({
-      email: create.email,
-      userId: create.userId,
-    });
+    if (newUser.email && newUser.password && newUser.firstName && newUser.lastName && newUser.userType) {
+      // hashPass will go here
+      let hashedPassword = await hashPassword(newUser.password);
+      newUser.password = hashedPassword;
+  
+      let create = await ChurchUser.create(newUser);
+      res.status(200).json({
+        email: create.email,
+        userId: create.userId,
+      });
+    } else {
+      res.status(400).send("Missing feilds");
+    }
+
   } else {
-    res.status(400).send("Email and password required.");
+    res.status(401).send("Not Authurized")
   }
 };
 
