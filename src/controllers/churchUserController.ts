@@ -96,42 +96,68 @@ export const getUser: RequestHandler = async (req, res, next) => {
 };
 
 export const modifyUser: RequestHandler = async (req, res, next) => {
-
-  let newUser = req.body;
-  let user = await verifyUser(req);
-
-  //Does the user exist? if yes contiune
-  if (!user) {
-    return res.status(403).send();
-  }
-
-  let userId = parseInt(req.params.id);
-  newUser.userId = userId
-
-  //Is the user making the edit the same user editing themselves? if yes continue
-  if (user.userId != userId) {
-    if (user.userType !== "admin") {
+  try {
+    let newUser = req.body;
+    let user = await verifyUser(req);
+  
+    //Does the user exist? if yes contiune
+    if (!user) {
+      return res.status(403).send("No user signed in");
+    }
+  
+    let userId = parseInt(req.params.id);
+    newUser.userId = userId
+  
+    //Is the user making the edit the same user editing themselves? if yes continue
+    if (user.userType === "admin") {
+      let foundUser = await ChurchUser.findByPk(userId);
+      if (!foundUser) {
+        return res.status(404).send();
+      }
+    
+      if (newUser.password) {
+        newUser.password = await hashPassword(newUser.password)
+      } else {
+        newUser.password = foundUser.password;
+      }
+  
+      if (!newUser.userType) {
+        user.userType = "admin"
+      }
+  
+      if (foundUser.dataValues.userId === parseInt(newUser.userId)) {
+        await ChurchUser.update(newUser, { where: { userId } });
+        res.status(200).json();
+      }
+      else {
+        res.status(400).send();
+      }
+    } else if (user.userId === userId) {
+      let foundUser = await ChurchUser.findByPk(userId);
+      if (!foundUser) {
+        return res.status(404).send();
+      }
+    
+      if (newUser.password) {
+        newUser.password = await hashPassword(newUser.password)
+      } else {
+        newUser.password = foundUser.password;
+      }
+      
+      newUser.userType = "user"
+  
+      if (foundUser.dataValues.userId === parseInt(newUser.userId)) {
+        await ChurchUser.update(newUser, { where: { userId } });
+        res.status(200).json();
+      }
+      else {
+        res.status(400).send();
+      }
+    } else {
       return res.status(403).send("Not the same user");
-    };
-  };
-
-  let foundUser = await ChurchUser.findByPk(userId);
-  if (!foundUser) {
-    return res.status(404).send();
-  }
-
-  if (newUser.password) {
-    newUser.password = await hashPassword(newUser.password)
-  } else {
-    newUser.password = foundUser.password;
-  }
-
-  if (foundUser.dataValues.userId === parseInt(newUser.userId)) {
-    await ChurchUser.update(newUser, { where: { userId } });
-    res.status(200).json();
-  }
-  else {
-    res.status(400).send();
+    }
+  } catch {
+    return res.status(500).send("Error modifing user")
   }
 };
 
@@ -146,20 +172,27 @@ export const deleteUser: RequestHandler = async (req, res, next) => {
   let findUser = await ChurchUser.findByPk(userId);
 
   //Is the user making the edit the same user editing themselves? if yes continue
-  if (user.userId != userId) {
-    if (user.userType !== "admin") {
-      return res.status(403).send("Not the same user");
-    };
-  };
-
-  if (findUser) {
-    await ChurchUser.destroy({
-      where: { userId: userId },
-    });
-    res.status(200).json();
+  if (user.userType === "admin") {
+    if (findUser) {
+      await ChurchUser.destroy({
+        where: { userId: userId },
+      });
+      res.status(200).send("User deleted");
+    } else {
+      res.status(404).send("User not found");
+    }
+  } else if (user.userId === userId) {
+    if (findUser) {
+      await ChurchUser.destroy({
+        where: { userId: userId },
+      });
+      res.status(200).send("User deleted");
+    } else {
+      res.status(404).send("User not found");
+    }
   } else {
-    res.status(404).json();
-  }
+    res.status(401).send("Unauthorized")
+  };
 };
 
 export const verifyCurrentUser: RequestHandler = async (req, res) => {

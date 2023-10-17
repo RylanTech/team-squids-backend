@@ -2,14 +2,13 @@ import { Router } from 'express';
 import { allUser, createUser, getUser,
 
  signInUser, modifyUser,deleteUser, verifyCurrentUser, vrfyUser, getAPIKey } from '../controllers/churchUserController';
+import { searchUser } from '../controllers/searchController';
 
 const router = Router();
 
 router.get('/', allUser);
 
 router.get('/:id', getUser);
-
-router.get('/search/:query')
 
 router.get("/apikey", getAPIKey);
 
@@ -25,5 +24,6 @@ router.delete('/delete-account/:id', deleteUser);
 
 router.get("/verify-current-user", verifyCurrentUser);
 
+router.post("/search/:query", searchUser)
 
 export default router; 
