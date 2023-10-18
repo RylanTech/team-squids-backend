@@ -21,7 +21,13 @@ app.use(express.static('uploads'))
 
 // incoming requests
 
-app.use(cors());
+const corsOptions = {
+  origin: 'https://churchhive.app', // Replace this with your frontend URL
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  optionsSuccessStatus: 204, // Some legacy browsers (IE11) choke on a 204 response.
+};
+
+app.use(cors(corsOptions));
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
