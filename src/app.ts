@@ -10,7 +10,6 @@ import path from 'path';
 import { ChurchUser } from './models/churchUser';
 import { verifyUser } from './services/authService';
 // import locationRoutes from './routes/locationRoutes'
-import cors from 'cors';
 
 const app = express();
 
@@ -20,6 +19,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static('uploads'))
 
 // incoming requests
+const cors = require('cors');
 app.use(cors());
 
 const storage = multer.diskStorage({
