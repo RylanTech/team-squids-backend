@@ -80,5 +80,5 @@ db.sync({ alter:false }).then(() => {
   console.info("Connected to the database!")
 });
 
-
+//deployment change to 3000
 app.listen(3000);

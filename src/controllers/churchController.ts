@@ -118,8 +118,6 @@ export const getFavoriteChurches: RequestHandler = async (req, res, next) => {
   }
 };
 
-
-
 export const getOneChurch: RequestHandler = async (req, res, next) => {
   try {
     const churchId = req.params.id;
@@ -161,6 +159,58 @@ export const getOneChurch: RequestHandler = async (req, res, next) => {
       .send(error.message || "Some error occurred while retrieving the Church.");
   }
 };
+
+export const getOneChurchByName: RequestHandler = async (req, res, next) => {
+  try {
+    const churchName = req.params.churchName;
+    let church = await Church.findAll({
+      include: [
+        {
+          model: ChurchUser,
+        },
+        {
+          model: Event,
+          where: {
+            date: {
+              [Op.gte]: Date.now(),
+            },
+          },
+          required: false, // Make this relation optional
+          order: [
+            ['date', 'ASC']
+          ]
+        },
+      ],
+      where: {
+        churchName: churchName,
+      },
+    });
+
+    let chrch: any = church[0]
+
+    if (!chrch) {
+      return res.status(404).send("Error: Church not found");
+    }
+
+    chrch.Events.map((event: Event) => {
+      if (typeof event.location === "string") {
+        event.location = JSON.parse(event.location);
+      }
+      return event;
+    })
+
+    if (typeof chrch.location === "string") {
+      chrch.location = JSON.parse(chrch.location);
+    }
+
+    res.status(200).json(chrch);
+  } catch (error: any) {
+    res
+      .status(500)
+      .send(error.message || "Some error occurred while retrieving the Church.");
+  }
+};
+
 export const getUserChurch: RequestHandler = async (req, res, next) => {
 
   let userId = req.params.userId;

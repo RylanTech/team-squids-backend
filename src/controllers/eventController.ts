@@ -276,7 +276,6 @@ export const updateEvent: RequestHandler = async (req, res, next) => {
       editEventData.imageUrl &&
       editEventData.location
     ) {
-      console.log(editEventData)
       await Event.update(editEventData, { where: { eventId: eventId } });
       return res.status(200).send("Event edited");
     } else {
