@@ -29,6 +29,7 @@ const storage = multer.diskStorage({
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
     const extension = path.extname(file.originalname);
+    console.log(extension)
     cb(null, uniqueSuffix + extension); // Rename the file to include a timestamp
   },
 });
@@ -37,7 +38,7 @@ const upload = multer({ storage: storage });
 // Routing Middleware
 app.use('/api/church', churchRoutes);
 app.use('/api/user', churchUserRoutes);
-app.use('/api/key', apiRoutes)
+app.use('/api/key', apiRoutes);
 // app.use('/api/search', locationRoutes); 
 app.get('/uploads/:filename', (req, res) => {
   const filename = req.params.filename;
@@ -80,5 +81,5 @@ db.sync({ alter:false }).then(() => {
   console.info("Connected to the database!")
 });
 
-//deployment change to 3000
+//for deployment change to 3000
 app.listen(3000);
