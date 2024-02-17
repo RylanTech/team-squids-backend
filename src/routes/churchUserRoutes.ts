@@ -1,7 +1,5 @@
 import { Router } from 'express';
-import { allUser, createUser, getUser,
-
- signInUser, modifyUser,deleteUser, verifyCurrentUser, vrfyUser, getAPIKey } from '../controllers/churchUserController';
+import { allUser, createUser, getUser, signInUser, modifyUser,deleteUser, verifyCurrentUser, vrfyUser, getAPIKey } from '../controllers/churchUserController';
 import { searchUser } from '../controllers/searchController';
 
 const router = Router();
@@ -26,4 +24,4 @@ router.get("/verify-current-user", verifyCurrentUser);
 
 router.post("/search/:query", searchUser)
 
-export default router; 
+export default router;
