@@ -235,3 +235,8 @@ export const getAPIKey: RequestHandler = async (req, res, next) => {
     res.status(500).send("Internal Server Error");
   }
 }
+
+export const handleDeviceId:RequestHandler = async (req, res, next) => {
+  console.log("device Id")
+  console.log(req.body)
+}
