@@ -3,12 +3,14 @@ import morgan from 'morgan';
 import { db } from './models';
 import churchRoutes from './routes/churchRoutes';
 import churchUserRoutes from './routes/churchUserRoutes'
+import userRoutes from './routes/userRoutes'
 import eventRoutes from './routes/eventRoutes'
 import apiRoutes from './routes/apiRoutes'
 import multer from 'multer';
 import path from 'path';
 import { ChurchUser } from './models/churchUser';
 import { verifyUser } from './services/authService';
+import { onTimeReached, scheduleTask } from './services/triggers';
 // import locationRoutes from './routes/locationRoutes'
 
 const app = express();
@@ -37,6 +39,7 @@ const upload = multer({ storage: storage });
 // Routing Middleware
 app.use('/api/church', churchRoutes);
 app.use('/api/user', churchUserRoutes);
+app.use('/api/appuser', userRoutes)
 app.use('/api/key', apiRoutes)
 // app.use('/api/search', locationRoutes); 
 app.get('/uploads/:filename', (req, res) => {
@@ -70,6 +73,7 @@ app.post("/api/event/upload-image", upload.single("image"), async (req, res) => 
 });
 app.use('/api/event', eventRoutes);
 
+
 app.use(( req: Request, res: Response, next: NextFunction ) => {
   res.status(404).send("error");
 })
@@ -80,5 +84,8 @@ db.sync({ alter:false }).then(() => {
   console.info("Connected to the database!")
 });
 
+
+scheduleTask("15:12", onTimeReached, 1);
+
 //deployment change to 3000
-app.listen(3000);
+app.listen(3001);

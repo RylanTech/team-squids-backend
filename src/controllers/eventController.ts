@@ -5,6 +5,8 @@ import { Church } from "../models/church";
 import { ChurchUser } from "../models/churchUser";
 import multer from "multer";
 import { Op } from "sequelize";
+import { createTrigger } from "../services/triggers";
+import { Trigger } from "../models/triggers";
 
 const path = require('path')
 const storage = multer.diskStorage({
@@ -17,6 +19,12 @@ const storage = multer.diskStorage({
 })
 const upload = multer({ storage: storage })
 
+interface TriggerInfo {
+  body: string;
+  title: string;
+  dayBefore: boolean;
+  weekBefore: boolean;
+}
 
 export const getAllEvents: RequestHandler = async (req, res, next) => {
   try {
@@ -188,7 +196,29 @@ export const createEvent: RequestHandler = async (req, res, next) => {
       return res.status(403).send();
     }
 
-    const newEvent: Event = req.body;
+    let triggerInfo: TriggerInfo = {
+      dayBefore: false,
+      weekBefore: false,
+      title: "Church Hive",
+      body: "An event is coming up!"
+    }
+    let newEvent: Event
+
+    const requestBodyVersion: string | string[] | undefined = req.headers['request-body-version'];
+
+    //v2 is for future notificaiton customization
+    if (requestBodyVersion === 'v2') {
+      //new version
+      console.log('v2')
+      console.log(req.body)
+      triggerInfo = req.body.triggerInfo
+      newEvent = req.body.newEvent
+    } else {
+      //old version
+      console.log('v1')
+      newEvent = req.body;
+    }
+    console.log(triggerInfo)
 
     const church: Church | null = await Church.findByPk(newEvent.churchId);
 
@@ -229,7 +259,35 @@ export const createEvent: RequestHandler = async (req, res, next) => {
 
         let created = await Event.create(newEvent);
 
-        res.status(201).json(created);
+        if (created.eventId) {
+          console.log(triggerInfo)
+          if (triggerInfo && triggerInfo.dayBefore === true) {
+            let newTrigger = {
+              triggerId: 0, // Placeholder for auto-incremented triggerId
+              eventId: created.eventId,
+              churchId: created.churchId,
+              date: created.date.setDate(created.date.getDate() - 1),
+              title: `${church.churchName}:`,
+              body: `Heads up! "${created.eventTitle}" is tomorrow!`
+            }
+            createTrigger(newTrigger)
+          }
+          if (triggerInfo && triggerInfo.weekBefore === true) {
+            let newTrigger = {
+              triggerId: 0, // Placeholder for auto-incremented triggerId
+              eventId: created.eventId,
+              churchId: created.churchId,
+              date: created.date.setDate(created.date.getDate() - 7),
+              title: `${church.churchName}:`,
+              body: `Heads up! "${created.eventTitle}" is next week!`
+            }
+            createTrigger(newTrigger)
+            // createTrigger(newTrigger);
+          }
+          res.status(201).json(created);
+        } else {
+          res.status(500).send()
+        }
       } else {
         res.status(400).send();
       }
