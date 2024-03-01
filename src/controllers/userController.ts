@@ -3,44 +3,33 @@ import { user } from "../models/users";
 
 export const createUser: RequestHandler = async (req, res, next) => {
     try {
-        let newUser: user = req.body
+        let newUser: user = req.body;
+
         if (newUser.phoneId && newUser.favArr) {
+            newUser.favArr = JSON.stringify(newUser.favArr);
 
-            newUser.favArr = JSON.stringify(newUser.favArr)
+            let existingUsers = await user.findAll({
+                where: { phoneId: newUser.phoneId },
+            });
 
-            let sameUser = await user.findAll({
-                where: {phoneId: newUser.phoneId}
-            })
+            if (existingUsers && existingUsers.length > 0) {
+                // If there are multiple entries, delete all but one
+                await user.destroy({
+                    where: { phoneId: newUser.phoneId },
+                    limit: existingUsers.length - 1,
+                });
 
-            function moreThanTwo() {
-                if (sameUser.length > 1) {
-                    let id = sameUser[1].dataValues.phoneId
-                    user.destroy({
-                        where: {
-                            userId: id
-                        }
-                    })
-                    moreThanTwo()
-                } else {
-                    return
-                }
+                console.log("Deleted duplicate entries for phoneId:", newUser.phoneId);
             }
 
-            if (sameUser) {
-                await moreThanTwo()
-                console.log("User already exists")
-                res.status(200).send()
-            } else {
-                let created = await user.create(newUser)
-                res.status(201).send(created)
-            }
-
-            res.status(201).send()
+            let created = await user.create(newUser);
+            res.status(201).send(created);
         } else {
-            res.status(400).send()
+            res.status(400).send();
         }
     } catch (err) {
-        res.status(500).send(err)
+        console.error(err);
+        res.status(500).send(err);
     }
 };
 
