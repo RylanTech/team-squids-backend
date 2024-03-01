@@ -7,11 +7,27 @@ export const createUser: RequestHandler = async (req, res, next) => {
         if (newUser.phoneId && newUser.favArr) {
 
             newUser.favArr = JSON.stringify(newUser.favArr)
-            // console.log(newUser)
-            let sameUser = await user.findOne({
+
+            let sameUser = await user.findAll({
                 where: {phoneId: newUser.phoneId}
             })
+
+            function moreThanTwo() {
+                if (sameUser.length > 1) {
+                    let id = sameUser[1].dataValues.phoneId
+                    user.destroy({
+                        where: {
+                            userId: id
+                        }
+                    })
+                    moreThanTwo()
+                } else {
+                    return
+                }
+            }
+
             if (sameUser) {
+                await moreThanTwo()
                 console.log("User already exists")
                 res.status(200).send()
             } else {
