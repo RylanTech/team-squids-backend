@@ -7,10 +7,19 @@ export const createUser: RequestHandler = async (req, res, next) => {
         if (newUser.phoneId && newUser.favArr) {
 
             newUser.favArr = JSON.stringify(newUser.favArr)
-            console.log(newUser)
-            let created = await user.create(newUser)
+            // console.log(newUser)
+            let sameUser = await user.findOne({
+                where: {phoneId: newUser.phoneId}
+            })
+            if (sameUser) {
+                console.log("User already exists")
+                res.status(200).send()
+            } else {
+                let created = await user.create(newUser)
+                res.status(201).send(created)
+            }
 
-            res.status(201).send(created)
+            res.status(201).send()
         } else {
             res.status(400).send()
         }
