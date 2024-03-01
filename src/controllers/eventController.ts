@@ -26,6 +26,115 @@ interface TriggerInfo {
   weekBefore: boolean;
 }
 
+export const createEvent: RequestHandler = async (req, res, next) => {
+
+  try {
+    let user: ChurchUser | null = await verifyUser(req);
+    if (!user) {
+      return res.status(403).send();
+    }
+
+    let triggerInfo: TriggerInfo = {
+      dayBefore: false,
+      weekBefore: false,
+      title: "Church Hive",
+      body: "An event is coming up!"
+    }
+    let newEvent: Event
+
+    const requestBodyVersion: string | string[] | undefined = req.headers['request-body-version'];
+
+    //v2 is for future notificaiton customization
+    if (requestBodyVersion === 'v2') {
+      //new version
+      console.log('v2')
+      console.log(req.body)
+      triggerInfo = req.body.triggerInfo
+      newEvent = req.body.newEvent
+    } else {
+      //old version
+      console.log('v1')
+      newEvent = req.body;
+    }
+    console.log(triggerInfo)
+
+    const church: Church | null = await Church.findByPk(newEvent.churchId);
+
+    if (!church) {
+      return res.status(400).json({ error: "Invalid church ID" });
+    }
+
+    if (church.userId !== user.userId) {
+      return res.status(401).send("Not authorized");
+    }
+
+    if (typeof newEvent.location !== "string") {
+      newEvent.location = JSON.stringify(newEvent.location);
+    }
+
+
+    upload.single('image')(req, res, async (err) => {
+      if (err) {
+        return res.status(400).json({ error: 'Image upload failed.' });
+      }
+
+      // If there is a file uploaded, you can access its information using req.file
+      if (req.file) {
+        newEvent.imageUrl = `https://churchhive.net/Images/${req.file.filename}` // Store the image filename in your newEvent object
+      }
+
+      // ... Continue with the rest of your code ...
+
+      if (
+        newEvent.eventTitle &&
+        newEvent.date &&
+        newEvent.location &&
+        newEvent.eventType &&
+        newEvent.description &&
+        newEvent.imageUrl
+      ) {
+
+
+        let created = await Event.create(newEvent);
+
+        if (created.eventId) {
+          console.log(triggerInfo)
+          if (triggerInfo && triggerInfo.dayBefore === true) {
+            let newTrigger = {
+              triggerId: 0, // Placeholder for auto-incremented triggerId
+              eventId: created.eventId,
+              churchId: created.churchId,
+              date: created.date.setDate(created.date.getDate() - 1),
+              title: `${church.churchName}:`,
+              body: `Heads up! "${created.eventTitle}" is tomorrow!`
+            }
+            createTrigger(newTrigger)
+          }
+          if (triggerInfo && triggerInfo.weekBefore === true) {
+            let newTrigger = {
+              triggerId: 0, // Placeholder for auto-incremented triggerId
+              eventId: created.eventId,
+              churchId: created.churchId,
+              date: created.date.setDate(created.date.getDate() - 7),
+              title: `${church.churchName}:`,
+              body: `Heads up! "${created.eventTitle}" is next week!`
+            }
+            createTrigger(newTrigger)
+            // createTrigger(newTrigger);
+          }
+          res.status(201).json(created);
+        } else {
+          res.status(500).send()
+        }
+      } else {
+        res.status(400).send();
+      }
+    });
+  } catch (error: any) {
+    res.status(500).send(error)
+  }
+};
+
 export const getAllEvents: RequestHandler = async (req, res, next) => {
   try {
     const currentDate = new Date();
@@ -157,8 +266,6 @@ export const getUserEvents: RequestHandler = async (req, res, next) => {
   res.status(200).json(events);
 }
 
-
-
 export const getTenEvents: RequestHandler = async (req, res, next) => {
   try {
     let events: Event[] = await Event.findAll({
@@ -185,115 +292,6 @@ export const getTenEvents: RequestHandler = async (req, res, next) => {
     res
       .status(500)
       .send(error.message || "Some error occurred while retrieving events.");
-  }
-};
-
-export const createEvent: RequestHandler = async (req, res, next) => {
-
-  try {
-    let user: ChurchUser | null = await verifyUser(req);
-    if (!user) {
-      return res.status(403).send();
-    }
-
-    let triggerInfo: TriggerInfo = {
-      dayBefore: false,
-      weekBefore: false,
-      title: "Church Hive",
-      body: "An event is coming up!"
-    }
-    let newEvent: Event
-
-    const requestBodyVersion: string | string[] | undefined = req.headers['request-body-version'];
-
-    //v2 is for future notificaiton customization
-    if (requestBodyVersion === 'v2') {
-      //new version
-      console.log('v2')
-      console.log(req.body)
-      triggerInfo = req.body.triggerInfo
-      newEvent = req.body.newEvent
-    } else {
-      //old version
-      console.log('v1')
-      newEvent = req.body;
-    }
-    console.log(triggerInfo)
-
-    const church: Church | null = await Church.findByPk(newEvent.churchId);
-
-    if (!church) {
-      return res.status(400).json({ error: "Invalid church ID" });
-    }
-
-    if (church.userId !== user.userId) {
-      return res.status(401).send("Not authorized");
-    }
-
-    if (typeof newEvent.location !== "string") {
-      newEvent.location = JSON.stringify(newEvent.location);
-    }
-
-
-    upload.single('image')(req, res, async (err) => {
-      if (err) {
-        return res.status(400).json({ error: 'Image upload failed.' });
-      }
-
-      // If there is a file uploaded, you can access its information using req.file
-      if (req.file) {
-        newEvent.imageUrl = `https://churchhive.net/Images/${req.file.filename}` // Store the image filename in your newEvent object
-      }
-
-      // ... Continue with the rest of your code ...
-
-      if (
-        newEvent.eventTitle &&
-        newEvent.date &&
-        newEvent.location &&
-        newEvent.eventType &&
-        newEvent.description &&
-        newEvent.imageUrl
-      ) {
-
-
-        let created = await Event.create(newEvent);
-
-        if (created.eventId) {
-          console.log(triggerInfo)
-          if (triggerInfo && triggerInfo.dayBefore === true) {
-            let newTrigger = {
-              triggerId: 0, // Placeholder for auto-incremented triggerId
-              eventId: created.eventId,
-              churchId: created.churchId,
-              date: created.date.setDate(created.date.getDate() - 1),
-              title: `${church.churchName}:`,
-              body: `Heads up! "${created.eventTitle}" is tomorrow!`
-            }
-            createTrigger(newTrigger)
-          }
-          if (triggerInfo && triggerInfo.weekBefore === true) {
-            let newTrigger = {
-              triggerId: 0, // Placeholder for auto-incremented triggerId
-              eventId: created.eventId,
-              churchId: created.churchId,
-              date: created.date.setDate(created.date.getDate() - 7),
-              title: `${church.churchName}:`,
-              body: `Heads up! "${created.eventTitle}" is next week!`
-            }
-            createTrigger(newTrigger)
-            // createTrigger(newTrigger);
-          }
-          res.status(201).json(created);
-        } else {
-          res.status(500).send()
-        }
-      } else {
-        res.status(400).send();
-      }
-    });
-  } catch (error: any) {
-    res.status(500).send(error)
   }
 };
 

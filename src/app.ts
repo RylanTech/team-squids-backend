@@ -10,7 +10,8 @@ import multer from 'multer';
 import path from 'path';
 import { ChurchUser } from './models/churchUser';
 import { verifyUser } from './services/authService';
-import { onTimeReached, scheduleTask } from './services/triggers';
+import { fireNoti, sendNotifications } from './services/triggers';
+import { scheduleTaskEveryDay, scheduleTaskEveryNDays } from './services/timers';
 // import locationRoutes from './routes/locationRoutes'
 
 const app = express();
@@ -35,7 +36,6 @@ const storage = multer.diskStorage({
   },
 });
 const upload = multer({ storage: storage });
-
 // Routing Middleware
 app.use('/api/church', churchRoutes);
 app.use('/api/user', churchUserRoutes);
@@ -84,8 +84,7 @@ db.sync({ alter:false }).then(() => {
   console.info("Connected to the database!")
 });
 
-
-scheduleTask("15:12", onTimeReached, 1);
+scheduleTaskEveryDay("15:12", fireNoti, 1);
 
 //deployment change to 3000
 app.listen(3001);

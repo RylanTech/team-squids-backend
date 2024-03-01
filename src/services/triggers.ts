@@ -1,37 +1,10 @@
 import { Op, Sequelize } from "sequelize";
 import { Trigger } from "../models/triggers";
 import { user } from "../models/users";
+import 'dotenv/config'
+import { getAccessToken } from "./googleapi";
 
-export function scheduleTask(targetTime: string, callback: any, cooldownTime: number) {
-    const [targetHour, targetMinute] = targetTime.split(':').map(Number);
-    let lastExecutionTime = 0;
-
-    function checkTime() {
-        const now = new Date();
-        const currentHour = now.getHours();
-        const currentMinute = now.getMinutes();
-
-        const currentTimeInMinutes = currentHour * 60 + currentMinute;
-        const targetTimeInMinutes = targetHour * 60 + targetMinute;
-
-        // Check if it's the target time and cooldown has passed
-        if (
-            currentTimeInMinutes === targetTimeInMinutes &&
-            currentTimeInMinutes - lastExecutionTime >= cooldownTime
-        ) {
-            // Execute the callback function
-            callback();
-
-            // Update the last execution time
-            lastExecutionTime = currentTimeInMinutes;
-        }
-    }
-
-    // Run the check every second (adjust the interval as needed)
-    setInterval(checkTime, 5000);
-}
-
-export async function onTimeReached() {
+export async function fireNoti() {
     try {
         async function findAllUsersWithFavoriteChurch(churchId: number): Promise<string[]> {
             let notiUsers = await user.findAll({
@@ -72,14 +45,17 @@ export async function onTimeReached() {
                 },
             },
         });
-        console.log("Triggers")
-        console.log(triggers)
-        triggers.map(async (tri) => {
-            let users = await findAllUsersWithFavoriteChurch(tri.churchId)
-            console.log(`Notificaitons will be sent to the following phoneId's\n${users}`)
-            console.log(`${tri.title} \n ${tri.body}`)
-            Trigger.destroy({ where: { triggerId: tri.triggerId } })
-        })
+        console.log("Triggerd")
+        if (triggers.length > 0) {
+            triggers.map(async (tri) => {
+                let phoneIds = await findAllUsersWithFavoriteChurch(tri.churchId)
+                console.log(`Notificaitons will be sent to the following phoneId's\n${phoneIds}`)
+                sendNotifications(phoneIds, tri.title, tri.body)
+                Trigger.destroy({ where: { triggerId: tri.triggerId } })
+            })
+        } else {
+            console.log("No triggers")
+        }
     } catch (error) {
         console.error("Error finding triggers:", error);
         throw error;
@@ -88,4 +64,57 @@ export async function onTimeReached() {
 
 export function createTrigger(newTrigger: any) {
     Trigger.create(newTrigger)
+}
+
+export async function sendNotifications(phoneIds: any, title: string, body: string) {
+    let access_token = await getAccessToken();
+    const authHeader = async () => ({
+        'Authorization': `Bearer ${access_token}`,
+        'Content-Type': 'application/json'
+    });
+    let headerInfo = await authHeader(); // Use await here
+
+    let endpoint = process.env.GOOGLE_NOTI_ENDPOINT ?? '';
+
+    phoneIds.map(async (phoneId: string) => {
+        if (endpoint != '') {
+            let googleRequestBody = {
+                "message": {
+                    "token": phoneId,
+                    "notification": {
+                        "title": title,
+                        "body": body
+                    }
+                }
+            }
+
+            console.log(googleRequestBody)
+
+            // let responce: any = await axios.post(endpoint, googleRequestBody, {
+            //     headers: headerInfo
+            // })
+            //     .then(async () => {
+            //         if (responce.status === 404) {
+            //             let oldId = await user.findOne({
+            //                 where: {
+            //                     phoneId: phoneId
+            //                 }
+            //             });
+
+            //             if (oldId) {
+            //                 await user.destroy({
+            //                     where: {
+            //                         phoneId: oldId.phoneId
+            //                     }
+            //                 });
+            //             }
+            //         }
+            //     })
+            //     .catch(error => {
+            //         console.error('Error making API call:', error.message);
+            //     });
+
+        }
+
+    })
 }
