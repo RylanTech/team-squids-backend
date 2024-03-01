@@ -87,4 +87,4 @@ db.sync({ alter:false }).then(() => {
 scheduleTaskEveryDay("15:12", fireNoti, 1);
 
 //deployment change to 3000
-app.listen(3001);
+app.listen(3000);

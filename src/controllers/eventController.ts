@@ -109,6 +109,18 @@ export const createEvent: RequestHandler = async (req, res, next) => {
               body: `Heads up! "${created.eventTitle}" is tomorrow!`
             }
             createTrigger(newTrigger)
+          } else if (triggerInfo && triggerInfo.dayBefore === false) {
+
+          } else {
+            let newTrigger = {
+              triggerId: 0, // Placeholder for auto-incremented triggerId
+              eventId: created.eventId,
+              churchId: created.churchId,
+              date: created.date.setDate(created.date.getDate() - 1),
+              title: `${church.churchName}:`,
+              body: `Heads up! "${created.eventTitle}" is tomorrow!`
+            }
+            createTrigger(newTrigger)
           }
           if (triggerInfo && triggerInfo.weekBefore === true) {
             let newTrigger = {
@@ -120,7 +132,18 @@ export const createEvent: RequestHandler = async (req, res, next) => {
               body: `Heads up! "${created.eventTitle}" is next week!`
             }
             createTrigger(newTrigger)
-            // createTrigger(newTrigger);
+          } else if (triggerInfo && triggerInfo.weekBefore === false) {
+
+          } else {
+            let newTrigger = {
+              triggerId: 0, // Placeholder for auto-incremented triggerId
+              eventId: created.eventId,
+              churchId: created.churchId,
+              date: created.date.setDate(created.date.getDate() - 7),
+              title: `${church.churchName}:`,
+              body: `Heads up! "${created.eventTitle}" is next week!`
+            }
+            createTrigger(newTrigger)
           }
           res.status(201).json(created);
         } else {
