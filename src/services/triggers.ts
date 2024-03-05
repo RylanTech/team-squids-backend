@@ -3,6 +3,7 @@ import { Trigger } from "../models/triggers";
 import { user } from "../models/users";
 import 'dotenv/config'
 import { getAccessToken } from "./googleapi";
+import axios from "axios";
 
 export async function fireNoti() {
     try {
@@ -11,7 +12,8 @@ export async function fireNoti() {
                 attributes: ['phoneId'], // Select only the 'phoneId' column
                 where: {
                     [Op.or]: [
-                        Sequelize.where(Sequelize.col('favArr'), 'LIKE', `%${churchId},%`),
+                        Sequelize.where(Sequelize.col('favArr'), 'LIKE', `%,[${churchId},%`),
+                        Sequelize.where(Sequelize.col('favArr'), 'LIKE', `%,${churchId},%`),
                         Sequelize.where(Sequelize.col('favArr'), 'LIKE', `%,${churchId}]%`),
                         Sequelize.where(Sequelize.col('favArr'), 'LIKE', `%[${churchId}]%`),
                     ]
@@ -32,7 +34,7 @@ export async function fireNoti() {
         const startOfDayToday = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate(), 0, 0, 0, 0));
 
         // Set the end time to 12:59 PM UTC
-        const endOfDayToday = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate(), 12, 59, 59, 999));
+        const endOfDayToday = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate(), 24 * 60 * 60 * 1000));
 
         console.log(startOfDayToday)
         console.log(endOfDayToday)
@@ -90,30 +92,22 @@ export async function sendNotifications(phoneIds: any, title: string, body: stri
 
             console.log(googleRequestBody)
 
-            // let responce: any = await axios.post(endpoint, googleRequestBody, {
-            //     headers: headerInfo
-            // })
-            //     .then(async () => {
-            //         if (responce.status === 404) {
-            //             let oldId = await user.findOne({
-            //                 where: {
-            //                     phoneId: phoneId
-            //                 }
-            //             });
-
-            //             if (oldId) {
-            //                 await user.destroy({
-            //                     where: {
-            //                         phoneId: oldId.phoneId
-            //                     }
-            //                 });
-            //             }
-            //         }
-            //     })
-            //     .catch(error => {
-            //         console.error('Error making API call:', error.message);
-            //     });
-
+            let responce: any = await axios.post(endpoint, googleRequestBody, {
+                headers: headerInfo
+            })
+                .then(async (responce) => {
+                    console.log(responce)
+                })
+                .catch(async (error: any) => {
+                    if (error.response.status === 404) {
+                        await user.destroy({
+                            where: {
+                                phoneId: googleRequestBody.message.token
+                            }
+                        });
+                        console.log("oldId Destroyed")
+                    }
+                });
         }
 
     })
