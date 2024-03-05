@@ -38,15 +38,29 @@ export const editUser: RequestHandler = async (req, res, next) => {
         let updatedUser: user = req.body
         if (updatedUser) {
             updatedUser.favArr = JSON.stringify(updatedUser.favArr)
-            user.update(updatedUser, {
+
+            let oldPhoneId = await user.findOne({
                 where: {
                     phoneId: updatedUser.phoneId
                 }
             })
-            res.status(202).send(updatedUser)
+            console.log("oldPhoneId")
+            console.log(oldPhoneId)
+
+            if (oldPhoneId) {
+                user.update(updatedUser, {
+                    where: {
+                        phoneId: updatedUser.phoneId
+                    }
+                })
+                res.status(202).send(updatedUser)
+            } else {
+                let created = await user.create(updatedUser);
+                console.log(created)
+                res.status(201).send(created)
+            }
         } else {
-            let newUser = await user.create(updatedUser)
-            res.send(201).send(newUser)
+            res.status(400).send()
         }
     } catch {
         res.status(500).send()
