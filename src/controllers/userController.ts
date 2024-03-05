@@ -43,7 +43,10 @@ export const editUser: RequestHandler = async (req, res, next) => {
                     phoneId: updatedUser.phoneId
                 }
             })
-            res.status(202).send()
+            res.status(202).send(updatedUser)
+        } else {
+            let newUser = await user.create(updatedUser)
+            res.send(201).send(newUser)
         }
     } catch {
         res.status(500).send()
