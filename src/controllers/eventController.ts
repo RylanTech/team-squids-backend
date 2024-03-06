@@ -51,6 +51,8 @@ export const createEvent: RequestHandler = async (req, res, next) => {
       console.log('v2')
       console.log(req.body)
       triggerInfo = req.body.triggerInfo
+      triggerInfo.weekBefore = true
+      triggerInfo.dayBefore = true
       newEvent = req.body.newEvent
     } else {
       //old version
