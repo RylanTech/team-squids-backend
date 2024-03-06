@@ -33,14 +33,15 @@ export const createEvent: RequestHandler = async (req, res, next) => {
     if (!user) {
       return res.status(403).send();
     }
+    let newEvent: Event
 
     let triggerInfo: TriggerInfo = {
-      dayBefore: false,
-      weekBefore: false,
+      dayBefore: true,
+      weekBefore: true,
       title: "Church Hive",
-      body: "An event is coming up!"
+      body: "An event is coming up!",
     }
-    let newEvent: Event
+    
 
     const requestBodyVersion: string | string[] | undefined = req.headers['request-body-version'];
 
@@ -106,11 +107,11 @@ export const createEvent: RequestHandler = async (req, res, next) => {
               churchId: created.churchId,
               date: created.date.setDate(created.date.getDate() - 1),
               title: `${church.churchName}:`,
-              body: `Heads up! "${created.eventTitle}" is tomorrow!`
+              body: `"${created.eventTitle}" is tomorrow!`
             }
             createTrigger(newTrigger)
           } else if (triggerInfo && triggerInfo.dayBefore === false) {
-
+            return
           } else {
             let newTrigger = {
               triggerId: 0, // Placeholder for auto-incremented triggerId
@@ -118,7 +119,7 @@ export const createEvent: RequestHandler = async (req, res, next) => {
               churchId: created.churchId,
               date: created.date.setDate(created.date.getDate() - 1),
               title: `${church.churchName}:`,
-              body: `Heads up! "${created.eventTitle}" is tomorrow!`
+              body: `H"${created.eventTitle}" is tomorrow!`
             }
             createTrigger(newTrigger)
           }
@@ -129,11 +130,11 @@ export const createEvent: RequestHandler = async (req, res, next) => {
               churchId: created.churchId,
               date: created.date.setDate(created.date.getDate() - 7),
               title: `${church.churchName}:`,
-              body: `Heads up! "${created.eventTitle}" is next week!`
+              body: `"${created.eventTitle}" is next week!`
             }
             createTrigger(newTrigger)
           } else if (triggerInfo && triggerInfo.weekBefore === false) {
-
+            return
           } else {
             let newTrigger = {
               triggerId: 0, // Placeholder for auto-incremented triggerId
@@ -141,7 +142,7 @@ export const createEvent: RequestHandler = async (req, res, next) => {
               churchId: created.churchId,
               date: created.date.setDate(created.date.getDate() - 7),
               title: `${church.churchName}:`,
-              body: `Heads up! "${created.eventTitle}" is next week!`
+              body: `"${created.eventTitle}" is next week!`
             }
             createTrigger(newTrigger)
           }
