@@ -177,8 +177,12 @@ export const getAllEvents: RequestHandler = async (req, res, next) => {
     });
 
     if (events) {
-      events.map((event) => {
-        Event.destroy({
+      events.map(async (event) => {
+        await Trigger.destroy({ 
+          where: { 
+            eventId: event.eventId
+          } });
+        await Event.destroy({
           where: { eventId: event.eventId }
         })
       })
@@ -237,9 +241,14 @@ export const getEvent: RequestHandler = async (req, res, next) => {
     }
 
     if (event.date < prevDay) {
-      Event.destroy({
+      await Trigger.destroy({ 
+        where: { 
+          eventId: event.eventId
+        } });
+      await Event.destroy({
         where: { eventId: event.eventId }
       })
+      return res.status(404).send("Event deleted")
     }
 
     if (typeof event.location === "string") {
@@ -253,6 +262,7 @@ export const getEvent: RequestHandler = async (req, res, next) => {
       .send(error.message || "Some error occurred while retrieving the Event.");
   }
 };
+
 export const getUserEvents: RequestHandler = async (req, res, next) => {
 
   const currentDate = new Date();
@@ -273,9 +283,13 @@ export const getUserEvents: RequestHandler = async (req, res, next) => {
     ],
   });
 
-  events.map((event) => {
+  events.map(async (event) => {
     if (event.date < prevDay) {
-      Event.destroy({
+      await Trigger.destroy({ 
+        where: { 
+          eventId: event.eventId
+        } });
+      await Event.destroy({
         where: { eventId: event.eventId }
       })
     }
@@ -391,7 +405,12 @@ export const deleteEvent: RequestHandler = async (req, res, next) => {
       }
     }
 
+    // Delete all triggers associated with the event
+    await Trigger.destroy({ where: { eventId: eventId } });
+
+    // Delete the event itself
     await Event.destroy({ where: { eventId: eventId } });
+
     res.status(204).send();
   } catch (error: any) {
     res.status(500).json({ error: error.message });
