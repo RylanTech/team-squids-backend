@@ -49,17 +49,19 @@ export const createEvent: RequestHandler = async (req, res, next) => {
     if (requestBodyVersion === 'v2') {
       //new version
       console.log('v2')
-      console.log(req.body)
       triggerInfo = req.body.triggerInfo
       triggerInfo.weekBefore = true
       triggerInfo.dayBefore = true
+      newEvent = req.body.newEvent
+    } else if (requestBodyVersion === 'v3') {
+      console.log('v3')
+      triggerInfo = req.body.triggerInfo
       newEvent = req.body.newEvent
     } else {
       //old version
       console.log('v1')
       newEvent = req.body;
     }
-    console.log(triggerInfo)
 
     const church: Church | null = await Church.findByPk(newEvent.churchId);
 
@@ -83,10 +85,8 @@ export const createEvent: RequestHandler = async (req, res, next) => {
 
       // If there is a file uploaded, you can access its information using req.file
       if (req.file) {
-        newEvent.imageUrl = `https://churchhive.net/Images/${req.file.filename}` // Store the image filename in your newEvent object
+        newEvent.imageUrl = `https://churchhive.net/Images/${req.file.filename}`
       }
-
-      // ... Continue with the rest of your code ...
 
       if (
         newEvent.eventTitle &&
@@ -121,7 +121,7 @@ export const createEvent: RequestHandler = async (req, res, next) => {
               churchId: created.churchId,
               date: created.date.setDate(created.date.getDate() - 1),
               title: `${church.churchName}:`,
-              body: `H"${created.eventTitle}" is tomorrow!`
+              body: `"${created.eventTitle}" is tomorrow!`
             }
             createTrigger(newTrigger)
           }

@@ -58,6 +58,19 @@ export async function fireNoti() {
         } else {
             console.log("No triggers")
         }
+
+
+        //handle triggers in the past if any exist
+        const pastTriggers = await Trigger.findAll({
+            where: {
+                date: {
+                    [Op.lt]: startOfDayToday,
+                },
+            },
+        });
+        pastTriggers.map((tri) => {
+            Trigger.destroy({ where: { triggerId: tri.triggerId } })
+        })
     } catch (error) {
         console.error("Error finding triggers:", error);
         throw error;
