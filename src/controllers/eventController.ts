@@ -45,17 +45,15 @@ export const createEvent: RequestHandler = async (req, res, next) => {
 
     const requestBodyVersion: string | string[] | undefined = req.headers['request-body-version'];
 
-    //v2 is for future notificaiton customization
-    if (requestBodyVersion === 'v2') {
-      //new version
+    if (requestBodyVersion === 'v3') {
+      console.log('v3')
+      triggerInfo = req.body.triggerInfo
+      newEvent = req.body.newEvent
+    } else if (requestBodyVersion === 'v2') {
       console.log('v2')
       triggerInfo = req.body.triggerInfo
       triggerInfo.weekBefore = true
       triggerInfo.dayBefore = true
-      newEvent = req.body.newEvent
-    } else if (requestBodyVersion === 'v3') {
-      console.log('v3')
-      triggerInfo = req.body.triggerInfo
       newEvent = req.body.newEvent
     } else {
       //old version
@@ -120,7 +118,7 @@ export const createEvent: RequestHandler = async (req, res, next) => {
               eventId: created.eventId,
               churchId: created.churchId,
               date: created.date.setDate(created.date.getDate() - 1),
-              title: `${church.churchName}:`,
+              title: `${church.churchName}`,
               body: `"${created.eventTitle}" is tomorrow!`
             }
             createTrigger(newTrigger)
@@ -131,7 +129,7 @@ export const createEvent: RequestHandler = async (req, res, next) => {
               eventId: created.eventId,
               churchId: created.churchId,
               date: created.date.setDate(created.date.getDate() - 7),
-              title: `${church.churchName}:`,
+              title: `${church.churchName}`,
               body: `"${created.eventTitle}" is next week!`
             }
             createTrigger(newTrigger)
@@ -373,6 +371,7 @@ export const updateEvent: RequestHandler = async (req, res, next) => {
       editEventData.location
     ) {
       await Event.update(editEventData, { where: { eventId: eventId } });
+
       return res.status(200).send("Event edited");
     } else {
       return res.status(400).json();
