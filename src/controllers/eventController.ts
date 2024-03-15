@@ -41,7 +41,7 @@ export const createEvent: RequestHandler = async (req, res, next) => {
       title: "Church Hive",
       body: "An event is coming up!",
     }
-    
+
 
     const requestBodyVersion: string | string[] | undefined = req.headers['request-body-version'];
 
@@ -75,7 +75,6 @@ export const createEvent: RequestHandler = async (req, res, next) => {
       newEvent.location = JSON.stringify(newEvent.location);
     }
 
-
     upload.single('image')(req, res, async (err) => {
       if (err) {
         return res.status(400).json({ error: 'Image upload failed.' });
@@ -94,7 +93,6 @@ export const createEvent: RequestHandler = async (req, res, next) => {
         newEvent.description &&
         newEvent.imageUrl
       ) {
-
 
         let created = await Event.create(newEvent);
 
@@ -176,10 +174,11 @@ export const getAllEvents: RequestHandler = async (req, res, next) => {
 
     if (events) {
       events.map(async (event) => {
-        await Trigger.destroy({ 
-          where: { 
+        await Trigger.destroy({
+          where: {
             eventId: event.eventId
-          } });
+          }
+        });
         await Event.destroy({
           where: { eventId: event.eventId }
         })
@@ -239,10 +238,11 @@ export const getEvent: RequestHandler = async (req, res, next) => {
     }
 
     if (event.date < prevDay) {
-      await Trigger.destroy({ 
-        where: { 
+      await Trigger.destroy({
+        where: {
           eventId: event.eventId
-        } });
+        }
+      });
       await Event.destroy({
         where: { eventId: event.eventId }
       })
@@ -283,10 +283,11 @@ export const getUserEvents: RequestHandler = async (req, res, next) => {
 
   events.map(async (event) => {
     if (event.date < prevDay) {
-      await Trigger.destroy({ 
-        where: { 
+      await Trigger.destroy({
+        where: {
           eventId: event.eventId
-        } });
+        }
+      });
       await Event.destroy({
         where: { eventId: event.eventId }
       })

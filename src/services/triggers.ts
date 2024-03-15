@@ -34,7 +34,7 @@ export async function fireNoti() {
         const startOfDayToday = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate(), 0, 0, 0, 0));
 
         // Set the end time to 12:59 PM UTC
-        const endOfDayToday = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate(), 24 * 60 * 60 * 1000));
+        const endOfDayToday = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate(), 23, 59, 59, 999));
 
         console.log(startOfDayToday)
         console.log(endOfDayToday)
@@ -43,12 +43,13 @@ export async function fireNoti() {
         const triggers = await Trigger.findAll({
             where: {
                 date: {
-                    [Op.between]: [startOfDayToday, endOfDayToday],
+                    [Op.lt]: endOfDayToday,
                 },
             },
         });
         console.log("Triggerd")
-        if (triggers.length > 0) {
+        console.log(triggers)
+        if (triggers.length) {
             triggers.map(async (tri) => {
                 let phoneIds = await findAllUsersWithFavoriteChurch(tri.churchId)
                 console.log(`Notificaitons will be sent to the following phoneId's\n${phoneIds}`)

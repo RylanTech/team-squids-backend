@@ -15,6 +15,8 @@ export class Event extends Model<
   declare churchId: number;
   declare eventTitle: string;
   declare date: Date;
+  declare endDate: Date;
+  declare eventDates: string;
   declare location: Location | string;
   declare eventType:
     | "Family"
@@ -39,20 +41,25 @@ export function EventFactory(sequelize: Sequelize) {
         primaryKey: true,
         allowNull: false,
       },
-
       churchId: {
         type: DataTypes.INTEGER,
         allowNull: false,
       },
-
       eventTitle: {
         type: DataTypes.STRING,
         allowNull: false,
       },
-
+      eventDates: {
+        type: DataTypes.TEXT,
+        allowNull: true
+      },
       date: {
         type: DataTypes.DATE,
         allowNull: false,
+      },
+      endDate: {
+        type: DataTypes.DATE,
+        allowNull: true,
       },
       location:{
         type: DataTypes.JSON,
@@ -88,7 +95,6 @@ export function EventFactory(sequelize: Sequelize) {
         allowNull: false,
         defaultValue: DataTypes.NOW,
       },
-
       updatedAt: {
         type: DataTypes.DATE,
         allowNull: false,
