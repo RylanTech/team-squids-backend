@@ -109,9 +109,6 @@ export async function sendNotifications(phoneIds: any, title: string, body: stri
             let responce: any = await axios.post(endpoint, googleRequestBody, {
                 headers: headerInfo
             })
-                .then(async (responce: any) => {
-                    console.log(responce)
-                })
                 .catch(async (error: any) => {
                     if (error.response.status === 404) {
                         await user.destroy({

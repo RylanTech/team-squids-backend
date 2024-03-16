@@ -109,7 +109,7 @@ export const createEvent: RequestHandler = async (req, res, next) => {
             }
             createTrigger(newTrigger)
           } else if (triggerInfo && triggerInfo.dayBefore === false) {
-            return
+            
           } else {
             let newTrigger = {
               triggerId: 0, // Placeholder for auto-incremented triggerId
@@ -132,7 +132,7 @@ export const createEvent: RequestHandler = async (req, res, next) => {
             }
             createTrigger(newTrigger)
           } else if (triggerInfo && triggerInfo.weekBefore === false) {
-            return
+            
           } else {
             let newTrigger = {
               triggerId: 0, // Placeholder for auto-incremented triggerId

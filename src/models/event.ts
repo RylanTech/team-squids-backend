@@ -16,7 +16,6 @@ export class Event extends Model<
   declare eventTitle: string;
   declare date: Date;
   declare endDate: Date;
-  declare eventDates: string;
   declare location: Location | string;
   declare eventType:
     | "Family"
@@ -48,10 +47,6 @@ export function EventFactory(sequelize: Sequelize) {
       eventTitle: {
         type: DataTypes.STRING,
         allowNull: false,
-      },
-      eventDates: {
-        type: DataTypes.TEXT,
-        allowNull: true
       },
       date: {
         type: DataTypes.DATE,
