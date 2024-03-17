@@ -17,6 +17,7 @@ export class Event extends Model<
   declare date: Date;
   declare endDate: Date;
   declare location: Location | string;
+  declare eventAudience: string;
   declare eventType:
     | "Family"
     | "Youth"
@@ -59,6 +60,10 @@ export function EventFactory(sequelize: Sequelize) {
       location:{
         type: DataTypes.JSON,
         allowNull: false,
+      },
+      eventAudience: {
+        type: DataTypes.STRING,
+        allowNull: false
       },
       eventType: {
         type: DataTypes.STRING,

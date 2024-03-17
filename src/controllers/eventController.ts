@@ -33,7 +33,7 @@ export const createEvent: RequestHandler = async (req, res, next) => {
     if (!user) {
       return res.status(403).send();
     }
-    let newEvent: Event
+    let newEvent: any
 
     let triggerInfo: TriggerInfo = {
       dayBefore: true,
@@ -60,6 +60,10 @@ export const createEvent: RequestHandler = async (req, res, next) => {
       console.log('v1')
       newEvent = req.body;
     }
+    console.log(newEvent.eventAudience)
+    if (newEvent.eventAudience === undefined) {
+      newEvent.eventAudience = "Everyone"
+    }
 
     const church: Church | null = await Church.findByPk(newEvent.churchId);
 
@@ -84,6 +88,7 @@ export const createEvent: RequestHandler = async (req, res, next) => {
       if (req.file) {
         newEvent.imageUrl = `https://churchhive.net/Images/${req.file.filename}`
       }
+      console.log(newEvent.eventAudience)
 
       if (
         newEvent.eventTitle &&
@@ -91,7 +96,8 @@ export const createEvent: RequestHandler = async (req, res, next) => {
         newEvent.location &&
         newEvent.eventType &&
         newEvent.description &&
-        newEvent.imageUrl
+        newEvent.imageUrl &&
+        newEvent.eventAudience
       ) {
 
         let created = await Event.create(newEvent);

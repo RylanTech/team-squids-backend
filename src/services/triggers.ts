@@ -106,19 +106,19 @@ export async function sendNotifications(phoneIds: any, title: string, body: stri
 
             console.log(googleRequestBody)
 
-            let responce: any = await axios.post(endpoint, googleRequestBody, {
-                headers: headerInfo
-            })
-                .catch(async (error: any) => {
-                    if (error.response.status === 404) {
-                        await user.destroy({
-                            where: {
-                                phoneId: googleRequestBody.message.token
-                            }
-                        });
-                        console.log("oldId Destroyed")
-                    }
-                });
+            // let responce: any = await axios.post(endpoint, googleRequestBody, {
+            //     headers: headerInfo
+            // })
+            //     .catch(async (error: any) => {
+            //         if (error.response.status === 404) {
+            //             await user.destroy({
+            //                 where: {
+            //                     phoneId: googleRequestBody.message.token
+            //                 }
+            //             });
+            //             console.log("oldId Destroyed")
+            //         }
+            //     });
         }
 
     })
