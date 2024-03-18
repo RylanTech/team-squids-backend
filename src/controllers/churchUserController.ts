@@ -202,20 +202,22 @@ export const deleteUser: RequestHandler = async (req, res, next) => {
 
 export const verifyCurrentUser: RequestHandler = async (req, res) => {
   const authHeader = req.headers.authorization;
-
+  
   if (authHeader) {
     const token = authHeader.split(" ")[1];
+
     const decoded = await verifyToken(token);
 
     if (decoded && decoded.userId) {
       const user = await ChurchUser.findByPk(decoded.userId);
 
       if (user) {
-        return res.json(user);
+        res.status(200).send(user);
       }
     }
+  } else {
+    res.status(401).json("Invalid token or user not found");
   }
-  return res.status(401).json("Invalid token or user not found");
 };
 
 export const vrfyUser: RequestHandler = async (req, res, next) => {

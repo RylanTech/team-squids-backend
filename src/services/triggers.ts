@@ -3,7 +3,6 @@ import { Trigger } from "../models/triggers";
 import { user } from "../models/users";
 import 'dotenv/config'
 import { getAccessToken } from "./googleapi";
-import axios from "axios";
 
 export async function fireNoti() {
     try {
@@ -117,6 +116,7 @@ export async function sendNotifications(phoneIds: any, title: string, body: stri
             //                 }
             //             });
             //             console.log("oldId Destroyed")
+            //         }
             //         }
             //     });
         }

@@ -45,24 +45,31 @@ export const createEvent: RequestHandler = async (req, res, next) => {
 
     const requestBodyVersion: string | string[] | undefined = req.headers['request-body-version'];
 
-    if (requestBodyVersion === 'v3') {
+    if (requestBodyVersion === 'v4') {
+      console.log('v4')
+      triggerInfo = req.body.triggerInfo
+      newEvent = req.body.newEvent
+    } else if (requestBodyVersion === 'v3') {
       console.log('v3')
       triggerInfo = req.body.triggerInfo
       newEvent = req.body.newEvent
+      newEvent.eventAudience = "Everyone"
     } else if (requestBodyVersion === 'v2') {
       console.log('v2')
       triggerInfo = req.body.triggerInfo
       triggerInfo.weekBefore = true
       triggerInfo.dayBefore = true
       newEvent = req.body.newEvent
+      newEvent.eventAudience = "Everyone"
     } else {
       //old version
       console.log('v1')
       newEvent = req.body;
+      newEvent.eventAudience = "Everyone"
     }
     console.log(newEvent.eventAudience)
     if (newEvent.eventAudience === undefined) {
-      newEvent.eventAudience = "Everyone"
+
     }
 
     const church: Church | null = await Church.findByPk(newEvent.churchId);
@@ -115,7 +122,7 @@ export const createEvent: RequestHandler = async (req, res, next) => {
             }
             createTrigger(newTrigger)
           } else if (triggerInfo && triggerInfo.dayBefore === false) {
-            
+
           } else {
             let newTrigger = {
               triggerId: 0, // Placeholder for auto-incremented triggerId
@@ -138,7 +145,7 @@ export const createEvent: RequestHandler = async (req, res, next) => {
             }
             createTrigger(newTrigger)
           } else if (triggerInfo && triggerInfo.weekBefore === false) {
-            
+
           } else {
             let newTrigger = {
               triggerId: 0, // Placeholder for auto-incremented triggerId
