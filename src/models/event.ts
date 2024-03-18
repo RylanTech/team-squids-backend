@@ -70,6 +70,7 @@ export function EventFactory(sequelize: Sequelize) {
         validate: {
           isIn: [
             [
+              "Kids",
               "Family",
               "Youth",
               "Young Adults",
