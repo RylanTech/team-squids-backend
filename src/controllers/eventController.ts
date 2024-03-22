@@ -68,9 +68,8 @@ export const createEvent: RequestHandler = async (req, res, next) => {
       newEvent.eventAudience = "Everyone"
     }
     console.log(newEvent.eventAudience)
-    if (newEvent.eventAudience === undefined) {
 
-    }
+    console.log(newEvent)
 
     const church: Church | null = await Church.findByPk(newEvent.churchId);
 
@@ -106,7 +105,7 @@ export const createEvent: RequestHandler = async (req, res, next) => {
         newEvent.imageUrl &&
         newEvent.eventAudience
       ) {
-
+        console.log(newEvent.endDate)
         let created = await Event.create(newEvent);
 
         if (created.eventId) {
@@ -117,7 +116,7 @@ export const createEvent: RequestHandler = async (req, res, next) => {
               eventId: created.eventId,
               churchId: created.churchId,
               date: created.date.setDate(created.date.getDate() - 1),
-              title: `${church.churchName}:`,
+              title: `${church.churchName}`,
               body: `"${created.eventTitle}" is tomorrow!`
             }
             createTrigger(newTrigger)
@@ -152,7 +151,7 @@ export const createEvent: RequestHandler = async (req, res, next) => {
               eventId: created.eventId,
               churchId: created.churchId,
               date: created.date.setDate(created.date.getDate() - 7),
-              title: `${church.churchName}:`,
+              title: `${church.churchName}`,
               body: `"${created.eventTitle}" is next week!`
             }
             createTrigger(newTrigger)
@@ -357,6 +356,8 @@ export const updateEvent: RequestHandler = async (req, res, next) => {
     let eventId = req.params.eventId;
     let editEventData: Event = req.body;
 
+    console.log(editEventData)
+
     // If location is an object, stringify it
     if (typeof editEventData.location !== "string") {
       editEventData.location = JSON.stringify(editEventData.location);
@@ -384,9 +385,64 @@ export const updateEvent: RequestHandler = async (req, res, next) => {
       editEventData.imageUrl &&
       editEventData.location
     ) {
-      await Event.update(editEventData, { where: { eventId: eventId } });
+      let updated = await Event.update(editEventData, { where: { eventId: eventId } });
 
-      return res.status(200).send("Event edited");
+      if (updated) {
+        let weekBeforeTrigger = await Trigger.findOne({
+          where: {
+            eventId: eventId,
+            body: { [Op.like]: `%"${matchingEvent.eventTitle}" is next week!%` }
+          },
+        });
+
+        let dayBeforeTrigger = await Trigger.findOne({
+          where: {
+            eventId: eventId,
+            body: { [Op.like]: `%"${matchingEvent.eventTitle}" is tomorrow!%` }
+          },
+        });
+
+
+        console.log("UpdatingTriggersHere")
+        console.log(weekBeforeTrigger)
+        console.log(`${matchingEvent.eventTitle} is next week!`)
+
+        if (weekBeforeTrigger) {
+          let newTriggerWeekDate = new Date(editEventData.date);
+          newTriggerWeekDate.setDate(newTriggerWeekDate.getDate() - 7.1);
+        
+          // Update the week before trigger with the current event info
+          await Trigger.update(
+            {
+              eventId: matchingEvent.eventId,
+              churchId: matchingEvent.churchId,
+              date: newTriggerWeekDate,
+              title: `${weekBeforeTrigger.title}`,
+              body: `"${editEventData.eventTitle}" is next week!`
+            },
+            { where: { triggerId: weekBeforeTrigger.triggerId } }
+          );
+        }
+
+        if (dayBeforeTrigger) {
+          let newTriggerDayDate = new Date(editEventData.date);
+          newTriggerDayDate.setDate(newTriggerDayDate.getDate() - 1.1);
+
+          await Trigger.update(
+            {
+              eventId: matchingEvent.eventId,
+              churchId: matchingEvent.churchId,
+              date: newTriggerDayDate,
+              title: `${dayBeforeTrigger.title}`,
+              body: `"${editEventData.eventTitle}" is tomorrow!`
+            },
+            { where: { triggerId: dayBeforeTrigger.triggerId } }
+          );
+        }
+        return res.status(200).send("Event edited");
+      } else {
+        return res.status(400).send()
+      }
     } else {
       return res.status(400).json();
     }

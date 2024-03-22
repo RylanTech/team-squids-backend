@@ -10,6 +10,7 @@ import multer from 'multer';
 import path from 'path';
 import { ChurchUser } from './models/churchUser';
 import { verifyUser } from './services/authService';
+import { scheduleTaskEveryDay } from './services/timers';
 
 const app = express();
 
@@ -81,7 +82,11 @@ db.sync({ alter:false }).then(() => {
   console.info("Connected to the database!")
 });
 
-// scheduleTaskEveryDay("15:12", fireNoti, 1);
+//5:30pm EST
+scheduleTaskEveryDay("21:30", fireNoti, 1);
+//16 = noon EST
+//scheduleTaskEveryDay("16:14", fireNoti, 1);
+
 
 //deployment change to 3000
-app.listen(3001);
+app.listen(3000);
