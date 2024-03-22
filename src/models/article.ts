@@ -5,49 +5,32 @@ import {
     Model,
     Sequelize,
 } from "sequelize";
-import { Event } from "./event";
-
-export class Trigger extends Model<
-    InferAttributes<Trigger>,
-    InferCreationAttributes<Trigger>
+export class Article extends Model<
+    InferAttributes<Article>,
+    InferCreationAttributes<Article>
 > {
-    declare triggerId: number;
-    declare eventId: number;
-    declare churchId: number;
-    declare date: Date;
+    declare ArticleId: number;
     declare title: string;
     declare body: string;
     declare createdAt?: Date;
     declare updatedAt?: Date;
 }
 
-export function TriggerFactory(sequelize: Sequelize) {
-    Trigger.init(
+export function ArticleFactory(sequelize: Sequelize) {
+    Article.init(
         {
-            triggerId: {
+            ArticleId: {
                 type: DataTypes.INTEGER,
                 primaryKey: true,
                 allowNull: false,
                 autoIncrement: true
-            },
-            eventId: {
-                type: DataTypes.INTEGER,
-                allowNull: false
-            },
-            churchId: {
-                type: DataTypes.INTEGER,
-                allowNull: false
-            },
-            date: {
-                type: DataTypes.DATE,
-                allowNull: false,
             },
             title: {
                 type: DataTypes.STRING,
                 allowNull: false
             },
             body: {
-                type: DataTypes.STRING,
+                type: DataTypes.TEXT,
                 allowNull: false
             },
             createdAt: {
@@ -63,13 +46,9 @@ export function TriggerFactory(sequelize: Sequelize) {
         },
         {
             freezeTableName: true,
-            tableName: "triggers",
+            tableName: "articles",
             sequelize,
             collate: 'utf8_general_ci',
         }
     );
 }
-export function AssociateEventTrigger() {
-    Event.hasMany(Trigger, { foreignKey: "eventId" });
-    Trigger.belongsTo(Event, { foreignKey: "eventId" });
-  }
