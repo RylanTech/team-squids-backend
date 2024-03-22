@@ -5,6 +5,8 @@ import { Church } from "../models/church";
 import { ChurchUser } from "../models/churchUser";
 import multer from "multer";
 import { Op } from "sequelize";
+import { createTrigger } from "../services/triggers";
+import { Trigger } from "../models/triggers";
 
 const path = require('path')
 const storage = multer.diskStorage({
@@ -17,6 +19,155 @@ const storage = multer.diskStorage({
 })
 const upload = multer({ storage: storage })
 
+interface TriggerInfo {
+  body: string;
+  title: string;
+  dayBefore: boolean;
+  weekBefore: boolean;
+}
+
+export const createEvent: RequestHandler = async (req, res, next) => {
+
+  try {
+    let user: ChurchUser | null = await verifyUser(req);
+    if (!user) {
+      return res.status(403).send();
+    }
+    let newEvent: any
+
+    let triggerInfo: TriggerInfo = {
+      dayBefore: true,
+      weekBefore: true,
+      title: "Church Hive",
+      body: "An event is coming up!",
+    }
+
+
+    const requestBodyVersion: string | string[] | undefined = req.headers['request-body-version'];
+
+    if (requestBodyVersion === 'v4') {
+      console.log('v4')
+      triggerInfo = req.body.triggerInfo
+      newEvent = req.body.newEvent
+    } else if (requestBodyVersion === 'v3') {
+      console.log('v3')
+      triggerInfo = req.body.triggerInfo
+      newEvent = req.body.newEvent
+      newEvent.eventAudience = "Everyone"
+    } else if (requestBodyVersion === 'v2') {
+      console.log('v2')
+      triggerInfo = req.body.triggerInfo
+      triggerInfo.weekBefore = true
+      triggerInfo.dayBefore = true
+      newEvent = req.body.newEvent
+      newEvent.eventAudience = "Everyone"
+    } else {
+      //old version
+      console.log('v1')
+      newEvent = req.body;
+      newEvent.eventAudience = "Everyone"
+    }
+    console.log(newEvent.eventAudience)
+
+    console.log(newEvent)
+
+    const church: Church | null = await Church.findByPk(newEvent.churchId);
+
+    if (!church) {
+      return res.status(400).json({ error: "Invalid church ID" });
+    }
+
+    if (church.userId !== user.userId) {
+      return res.status(401).send("Not authorized");
+    }
+
+    if (typeof newEvent.location !== "string") {
+      newEvent.location = JSON.stringify(newEvent.location);
+    }
+
+    upload.single('image')(req, res, async (err) => {
+      if (err) {
+        return res.status(400).json({ error: 'Image upload failed.' });
+      }
+
+      // If there is a file uploaded, you can access its information using req.file
+      if (req.file) {
+        newEvent.imageUrl = `https://churchhive.net/Images/${req.file.filename}`
+      }
+      console.log(newEvent.eventAudience)
+
+      if (
+        newEvent.eventTitle &&
+        newEvent.date &&
+        newEvent.location &&
+        newEvent.eventType &&
+        newEvent.description &&
+        newEvent.imageUrl &&
+        newEvent.eventAudience
+      ) {
+        console.log(newEvent.endDate)
+        let created = await Event.create(newEvent);
+
+        if (created.eventId) {
+          console.log(triggerInfo)
+          if (triggerInfo && triggerInfo.dayBefore === true) {
+            let newTrigger = {
+              triggerId: 0, // Placeholder for auto-incremented triggerId
+              eventId: created.eventId,
+              churchId: created.churchId,
+              date: created.date.setDate(created.date.getDate() - 1),
+              title: `${church.churchName}`,
+              body: `"${created.eventTitle}" is tomorrow!`
+            }
+            createTrigger(newTrigger)
+          } else if (triggerInfo && triggerInfo.dayBefore === false) {
+
+          } else {
+            let newTrigger = {
+              triggerId: 0, // Placeholder for auto-incremented triggerId
+              eventId: created.eventId,
+              churchId: created.churchId,
+              date: created.date.setDate(created.date.getDate() - 1),
+              title: `${church.churchName}`,
+              body: `"${created.eventTitle}" is tomorrow!`
+            }
+            createTrigger(newTrigger)
+          }
+          if (triggerInfo && triggerInfo.weekBefore === true) {
+            let newTrigger = {
+              triggerId: 0, // Placeholder for auto-incremented triggerId
+              eventId: created.eventId,
+              churchId: created.churchId,
+              date: created.date.setDate(created.date.getDate() - 7),
+              title: `${church.churchName}`,
+              body: `"${created.eventTitle}" is next week!`
+            }
+            createTrigger(newTrigger)
+          } else if (triggerInfo && triggerInfo.weekBefore === false) {
+
+          } else {
+            let newTrigger = {
+              triggerId: 0, // Placeholder for auto-incremented triggerId
+              eventId: created.eventId,
+              churchId: created.churchId,
+              date: created.date.setDate(created.date.getDate() - 7),
+              title: `${church.churchName}`,
+              body: `"${created.eventTitle}" is next week!`
+            }
+            createTrigger(newTrigger)
+          }
+          res.status(201).json(created);
+        } else {
+          res.status(500).send()
+        }
+      } else {
+        res.status(400).send();
+      }
+    });
+  } catch (error: any) {
+    res.status(500).send(error)
+  }
+};
 
 export const getAllEvents: RequestHandler = async (req, res, next) => {
   try {
@@ -34,8 +185,13 @@ export const getAllEvents: RequestHandler = async (req, res, next) => {
     });
 
     if (events) {
-      events.map((event) => {
-        Event.destroy({
+      events.map(async (event) => {
+        await Trigger.destroy({
+          where: {
+            eventId: event.eventId
+          }
+        });
+        await Event.destroy({
           where: { eventId: event.eventId }
         })
       })
@@ -94,9 +250,15 @@ export const getEvent: RequestHandler = async (req, res, next) => {
     }
 
     if (event.date < prevDay) {
-      Event.destroy({
+      await Trigger.destroy({
+        where: {
+          eventId: event.eventId
+        }
+      });
+      await Event.destroy({
         where: { eventId: event.eventId }
       })
+      return res.status(404).send("Event deleted")
     }
 
     if (typeof event.location === "string") {
@@ -110,6 +272,7 @@ export const getEvent: RequestHandler = async (req, res, next) => {
       .send(error.message || "Some error occurred while retrieving the Event.");
   }
 };
+
 export const getUserEvents: RequestHandler = async (req, res, next) => {
 
   const currentDate = new Date();
@@ -130,9 +293,14 @@ export const getUserEvents: RequestHandler = async (req, res, next) => {
     ],
   });
 
-  events.map((event) => {
+  events.map(async (event) => {
     if (event.date < prevDay) {
-      Event.destroy({
+      await Trigger.destroy({
+        where: {
+          eventId: event.eventId
+        }
+      });
+      await Event.destroy({
         where: { eventId: event.eventId }
       })
     }
@@ -148,8 +316,6 @@ export const getUserEvents: RequestHandler = async (req, res, next) => {
 
   res.status(200).json(events);
 }
-
-
 
 export const getTenEvents: RequestHandler = async (req, res, next) => {
   try {
@@ -180,65 +346,6 @@ export const getTenEvents: RequestHandler = async (req, res, next) => {
   }
 };
 
-export const createEvent: RequestHandler = async (req, res, next) => {
-
-  try {
-    let user: ChurchUser | null = await verifyUser(req);
-    if (!user) {
-      return res.status(403).send();
-    }
-
-    const newEvent: Event = req.body;
-
-    const church: Church | null = await Church.findByPk(newEvent.churchId);
-
-    if (!church) {
-      return res.status(400).json({ error: "Invalid church ID" });
-    }
-
-    if (church.userId !== user.userId) {
-      return res.status(401).send("Not authorized");
-    }
-
-    if (typeof newEvent.location !== "string") {
-      newEvent.location = JSON.stringify(newEvent.location);
-    }
-
-
-    upload.single('image')(req, res, async (err) => {
-      if (err) {
-        return res.status(400).json({ error: 'Image upload failed.' });
-      }
-
-      // If there is a file uploaded, you can access its information using req.file
-      if (req.file) {
-        newEvent.imageUrl = `https://churchhive.net/Images/${req.file.filename}` // Store the image filename in your newEvent object
-      }
-
-      // ... Continue with the rest of your code ...
-
-      if (
-        newEvent.eventTitle &&
-        newEvent.date &&
-        newEvent.location &&
-        newEvent.eventType &&
-        newEvent.description &&
-        newEvent.imageUrl
-      ) {
-
-
-        let created = await Event.create(newEvent);
-
-        res.status(201).json(created);
-      } else {
-        res.status(400).send();
-      }
-    });
-  } catch (error: any) {
-    res.status(500).send(error)
-  }
-};
-
 export const updateEvent: RequestHandler = async (req, res, next) => {
   try {
     let user: ChurchUser | null = await verifyUser(req);
@@ -248,6 +355,8 @@ export const updateEvent: RequestHandler = async (req, res, next) => {
 
     let eventId = req.params.eventId;
     let editEventData: Event = req.body;
+
+    console.log(editEventData)
 
     // If location is an object, stringify it
     if (typeof editEventData.location !== "string") {
@@ -276,8 +385,64 @@ export const updateEvent: RequestHandler = async (req, res, next) => {
       editEventData.imageUrl &&
       editEventData.location
     ) {
-      await Event.update(editEventData, { where: { eventId: eventId } });
-      return res.status(200).send("Event edited");
+      let updated = await Event.update(editEventData, { where: { eventId: eventId } });
+
+      if (updated) {
+        let weekBeforeTrigger = await Trigger.findOne({
+          where: {
+            eventId: eventId,
+            body: { [Op.like]: `%"${matchingEvent.eventTitle}" is next week!%` }
+          },
+        });
+
+        let dayBeforeTrigger = await Trigger.findOne({
+          where: {
+            eventId: eventId,
+            body: { [Op.like]: `%"${matchingEvent.eventTitle}" is tomorrow!%` }
+          },
+        });
+
+
+        console.log("UpdatingTriggersHere")
+        console.log(weekBeforeTrigger)
+        console.log(`${matchingEvent.eventTitle} is next week!`)
+
+        if (weekBeforeTrigger) {
+          let newTriggerWeekDate = new Date(editEventData.date);
+          newTriggerWeekDate.setDate(newTriggerWeekDate.getDate() - 7.1);
+        
+          // Update the week before trigger with the current event info
+          await Trigger.update(
+            {
+              eventId: matchingEvent.eventId,
+              churchId: matchingEvent.churchId,
+              date: newTriggerWeekDate,
+              title: `${weekBeforeTrigger.title}`,
+              body: `"${editEventData.eventTitle}" is next week!`
+            },
+            { where: { triggerId: weekBeforeTrigger.triggerId } }
+          );
+        }
+
+        if (dayBeforeTrigger) {
+          let newTriggerDayDate = new Date(editEventData.date);
+          newTriggerDayDate.setDate(newTriggerDayDate.getDate() - 1.1);
+
+          await Trigger.update(
+            {
+              eventId: matchingEvent.eventId,
+              churchId: matchingEvent.churchId,
+              date: newTriggerDayDate,
+              title: `${dayBeforeTrigger.title}`,
+              body: `"${editEventData.eventTitle}" is tomorrow!`
+            },
+            { where: { triggerId: dayBeforeTrigger.triggerId } }
+          );
+        }
+        return res.status(200).send("Event edited");
+      } else {
+        return res.status(400).send()
+      }
     } else {
       return res.status(400).json();
     }
@@ -309,7 +474,12 @@ export const deleteEvent: RequestHandler = async (req, res, next) => {
       }
     }
 
+    // Delete all triggers associated with the event
+    await Trigger.destroy({ where: { eventId: eventId } });
+
+    // Delete the event itself
     await Event.destroy({ where: { eventId: eventId } });
+
     res.status(204).send();
   } catch (error: any) {
     res.status(500).json({ error: error.message });

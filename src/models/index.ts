@@ -3,6 +3,8 @@ import { ChurchUserFactory} from "./churchUser";
 import { ChurchFactory, AssociateUserChurch  } from "./church";
 import { AssociateChurchEvent, EventFactory } from "./event";
 import 'dotenv/config';
+import { AssociateEventTrigger, TriggerFactory } from "./triggers";
+import { UserFactory } from "./users";
 
 const dbName = process.env.DB_NAME ?? '';
 const username = process.env.DB_USER ?? '';
@@ -17,7 +19,10 @@ const sequelize = new Sequelize(dbName, username, password, {
 ChurchFactory(sequelize);
 EventFactory(sequelize);
 ChurchUserFactory(sequelize);
+TriggerFactory(sequelize);
+UserFactory(sequelize);
 AssociateUserChurch();
 AssociateChurchEvent();
+AssociateEventTrigger();
 
 export const db = sequelize;

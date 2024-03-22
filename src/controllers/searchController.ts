@@ -4,6 +4,7 @@ import { RequestHandler } from "express";
 import { Event } from "../models/event";
 import { ChurchUser } from "../models/churchUser";
 import { verifyUser } from "../services/authService";
+import { Trigger } from "../models/triggers";
 
 // Simiple search function 
 export const searchChurch: RequestHandler = async (req, res, next) => {
@@ -77,7 +78,10 @@ export const searchEvent: RequestHandler = async (req, res, next) => {
     });
 
     if (checkResultsDB) {
-      checkResultsDB.map((event) => {
+      checkResultsDB.map((event: Event) => {
+        Trigger.destroy({
+          where: { eventId: event.eventId}
+        })
         Event.destroy({
           where: { eventId: event.eventId }
         })

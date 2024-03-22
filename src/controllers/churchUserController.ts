@@ -11,13 +11,18 @@ import { Event } from "../models/event";
 import { Op } from "sequelize";
 
 export const allUser: RequestHandler = async (req, res, next) => {
-  let users = await ChurchUser.findAll();
-  res.status(200).json(users);
+  let usr = await verifyUser(req)
+  if (usr) {
+    let users = await ChurchUser.findAll();
+    res.status(200).json(users);
+  } else {
+    res.status(401).send()
+  }
 };
 
 export const createUser: RequestHandler = async (req, res, next) => {
   let user = await verifyUser(req);
-  
+
   if (user) {
     if (user.userType !== "admin") {
       return res.status(403).send("Not an Admin");
@@ -29,7 +34,7 @@ export const createUser: RequestHandler = async (req, res, next) => {
       // hashPass will go here
       let hashedPassword = await hashPassword(newUser.password);
       newUser.password = hashedPassword;
-  
+
       let create = await ChurchUser.create(newUser);
       res.status(200).json({
         email: create.email,
@@ -99,32 +104,32 @@ export const modifyUser: RequestHandler = async (req, res, next) => {
   try {
     let newUser = req.body;
     let user = await verifyUser(req);
-  
+
     //Does the user exist? if yes contiune
     if (!user) {
       return res.status(403).send("No user signed in");
     }
-  
+
     let userId = parseInt(req.params.id);
     newUser.userId = userId
-  
+
     //Is the user making the edit the same user editing themselves? if yes continue
     if (user.userType === "admin") {
       let foundUser = await ChurchUser.findByPk(userId);
       if (!foundUser) {
         return res.status(404).send();
       }
-    
+
       if (newUser.password) {
         newUser.password = await hashPassword(newUser.password)
       } else {
         newUser.password = foundUser.password;
       }
-  
+
       if (!newUser.userType) {
         user.userType = "admin"
       }
-  
+
       if (foundUser.dataValues.userId === parseInt(newUser.userId)) {
         await ChurchUser.update(newUser, { where: { userId } });
         res.status(200).json();
@@ -137,15 +142,15 @@ export const modifyUser: RequestHandler = async (req, res, next) => {
       if (!foundUser) {
         return res.status(404).send();
       }
-    
+
       if (newUser.password) {
         newUser.password = await hashPassword(newUser.password)
       } else {
         newUser.password = foundUser.password;
       }
-      
+
       newUser.userType = "user"
-  
+
       if (foundUser.dataValues.userId === parseInt(newUser.userId)) {
         await ChurchUser.update(newUser, { where: { userId } });
         res.status(200).json();
@@ -197,20 +202,22 @@ export const deleteUser: RequestHandler = async (req, res, next) => {
 
 export const verifyCurrentUser: RequestHandler = async (req, res) => {
   const authHeader = req.headers.authorization;
-
+  
   if (authHeader) {
     const token = authHeader.split(" ")[1];
+
     const decoded = await verifyToken(token);
 
     if (decoded && decoded.userId) {
       const user = await ChurchUser.findByPk(decoded.userId);
 
       if (user) {
-        return res.json(user);
+        res.status(200).send(user);
       }
     }
+  } else {
+    res.status(401).json("Invalid token or user not found");
   }
-  return res.status(401).json("Invalid token or user not found");
 };
 
 export const vrfyUser: RequestHandler = async (req, res, next) => {
