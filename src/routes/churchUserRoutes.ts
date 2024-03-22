@@ -23,4 +23,4 @@ router.get("/verify-current-user", verifyCurrentUser);
 
 router.post("/search/:query", searchUser)
 
-export default router; 
+export default router;

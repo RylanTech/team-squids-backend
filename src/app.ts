@@ -30,6 +30,7 @@ const storage = multer.diskStorage({
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
     const extension = path.extname(file.originalname);
+    console.log(extension)
     cb(null, uniqueSuffix + extension); // Rename the file to include a timestamp
   },
 });
@@ -87,6 +88,4 @@ scheduleTaskEveryDay("21:30", fireNoti, 1);
 //16 = noon EST
 //scheduleTaskEveryDay("16:14", fireNoti, 1);
 
-
-//deployment change to 3000
 app.listen(3000);
