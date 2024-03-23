@@ -43,7 +43,6 @@ app.use('/api/user', churchUserRoutes);
 app.use('/api/appuser', userRoutes)
 app.use('/api/key', apiRoutes)
 app.use('/api/article', articleRoutes)
-// app.use('/api/search', locationRoutes); 
 app.get('/uploads/:filename', (req, res) => {
   const filename = req.params.filename;
   res.sendFile(filename, { root: 'uploads' }, (err) => {
@@ -87,7 +86,7 @@ db.sync({ alter:false }).then(() => {
 });
 
 //5:30pm EST
-scheduleTaskEveryDay("21:30", fireNoti, 1);
+// scheduleTaskEveryDay("21:30", fireNoti, 1);
 //16 = noon EST
 //scheduleTaskEveryDay("16:14", fireNoti, 1);
 
