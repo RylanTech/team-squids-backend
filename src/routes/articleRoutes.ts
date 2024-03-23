@@ -9,4 +9,4 @@ router.post("/create", createArticle);
 router.put("/edit/:id", updateArticle);
 router.delete("/remove/:id", deleteArticle)
 
-export default router; 
+export default router;
