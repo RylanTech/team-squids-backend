@@ -210,6 +210,13 @@ export const getAllEvents: RequestHandler = async (req, res, next) => {
       limit: 20
     });
 
+
+    updatedEvents.sort((a: any, b: any) => {
+      const dateA = new Date(a.dataValues.date);
+      const dateB = new Date(b.dataValues.date);
+      return dateA.getTime() - dateB.getTime();
+    });
+
     // Parse location string for each church
     updatedEvents = updatedEvents.map((event) => {
       if (typeof event.location === "string") {
@@ -314,6 +321,13 @@ export const getUserEvents: RequestHandler = async (req, res, next) => {
     return event;
   });
 
+  events.sort((a: any, b: any) => {
+    const dateA = new Date(a.dataValues.date);
+    const dateB = new Date(b.dataValues.date);
+    return dateA.getTime() - dateB.getTime();
+  });
+
+
   res.status(200).json(events);
 }
 
@@ -328,6 +342,12 @@ export const getTenEvents: RequestHandler = async (req, res, next) => {
           include: [ChurchUser],
         },
       ],
+    });
+
+    events.sort((a: any, b: any) => {
+      const dateA = new Date(a.dataValues.date);
+      const dateB = new Date(b.dataValues.date);
+      return dateA.getTime() - dateB.getTime();
     });
 
     // Parse location string for each church
@@ -410,7 +430,7 @@ export const updateEvent: RequestHandler = async (req, res, next) => {
         if (weekBeforeTrigger) {
           let newTriggerWeekDate = new Date(editEventData.date);
           newTriggerWeekDate.setDate(newTriggerWeekDate.getDate() - 7.1);
-        
+
           // Update the week before trigger with the current event info
           await Trigger.update(
             {

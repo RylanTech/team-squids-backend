@@ -7,7 +7,7 @@ export const getArticle: RequestHandler = async (req, res, next) => {
     try {
         let user: ChurchUser | null = await verifyUser(req);
         if (!user) {
-            return res.status(403).send();
+            return res.status(200).send(false);
         }
 
         let articleId = req.params.id
@@ -30,10 +30,18 @@ export const getArticles: RequestHandler = async (req, res, next) => {
     try {
         let user: ChurchUser | null = await verifyUser(req);
         if (!user) {
-            return res.status(403).send();
+            return res.status(200).send(false);
         }
 
         let articles = await Article.findAll()
+
+
+        articles.sort((a: any, b: any) => {
+            const dateA = new Date(a.dataValues.updatedAt);
+            const dateB = new Date(b.dataValues.updatedAt);
+            return dateB.getTime() - dateA.getTime();
+        });
+
 
         if (articles) {
             res.status(200).send(articles)

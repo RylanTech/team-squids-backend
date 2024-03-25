@@ -11,8 +11,7 @@ import multer from 'multer';
 import path from 'path';
 import { ChurchUser } from './models/churchUser';
 import { verifyUser } from './services/authService';
-import { scheduleTaskEveryDay } from './services/timers';
-import { fireNoti } from './services/triggers';
+import { checkTimeAndExecute } from './services/timers';
 
 const app = express();
 
@@ -85,9 +84,6 @@ db.sync({ alter:false }).then(() => {
   console.info("Connected to the database!")
 });
 
-//5:30pm EST
-// scheduleTaskEveryDay("21:30", fireNoti, 1);
-//16 = noon EST
-//scheduleTaskEveryDay("16:14", fireNoti, 1);
+checkTimeAndExecute()
 
 app.listen(3001);

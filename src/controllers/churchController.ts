@@ -47,7 +47,7 @@ export const createChurch: RequestHandler = async (req, res, next) => {
 
 export const getChurch: RequestHandler = async (req, res, next) => {
   try {
-    let churchFound: Church[] = await Church.findAll({
+    let churchFound: any = await Church.findAll({
       include: [
         {
           model: ChurchUser,
@@ -60,7 +60,7 @@ export const getChurch: RequestHandler = async (req, res, next) => {
     });
 
     // Parse location string for each church
-    churchFound = churchFound.map((church) => {
+    churchFound = churchFound.map((church: any) => {
       if (typeof church.location === "string") {
         church.location = JSON.parse(church.location);
       }
@@ -121,7 +121,7 @@ export const getFavoriteChurches: RequestHandler = async (req, res, next) => {
 export const getOneChurch: RequestHandler = async (req, res, next) => {
   try {
     const churchId = req.params.id;
-    let church = await Church.findByPk(churchId, {
+    let church: any = await Church.findByPk(churchId, {
       include: [
         {
           model: ChurchUser,
@@ -133,7 +133,7 @@ export const getOneChurch: RequestHandler = async (req, res, next) => {
               [Op.gte]: Date.now(),
             },
           },
-          required: false, // Make this relation optional
+          required: false,
           include: [
             {
               model: Church,
@@ -147,6 +147,19 @@ export const getOneChurch: RequestHandler = async (req, res, next) => {
     if (!church) {
       return res.status(404).send("Error: Church not found");
     }
+
+    let events = church.dataValues.Events
+
+    events.sort((a: any, b: any) => {
+      const dateA = new Date(a.dataValues.date);
+      const dateB = new Date(b.dataValues.date);
+      return dateA.getTime() - dateB.getTime();
+    });
+
+    church.dataValues.Events = events
+
+
+    console.log(events)
 
     if (typeof church.location === "string") {
       church.location = JSON.parse(church.location);
@@ -191,6 +204,16 @@ export const getOneChurchByName: RequestHandler = async (req, res, next) => {
     if (!chrch) {
       return res.status(404).send("Error: Church not found");
     }
+
+    let events = chrch.dataValues.Events
+
+    events.sort((a: any, b: any) => {
+      const dateA = new Date(a.dataValues.date);
+      const dateB = new Date(b.dataValues.date);
+      return dateA.getTime() - dateB.getTime();
+    });
+
+    chrch.dataValues.Events = events
 
     chrch.Events.map((event: Event) => {
       if (typeof event.location === "string") {
