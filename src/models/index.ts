@@ -5,6 +5,7 @@ import { AssociateChurchEvent, EventFactory } from "./event";
 import 'dotenv/config';
 import { AssociateEventTrigger, TriggerFactory } from "./triggers";
 import { UserFactory } from "./users";
+import { ArticleFactory } from "./article";
 
 const dbName = process.env.DB_NAME ?? '';
 const username = process.env.DB_USER ?? '';
@@ -21,6 +22,7 @@ EventFactory(sequelize);
 ChurchUserFactory(sequelize);
 TriggerFactory(sequelize);
 UserFactory(sequelize);
+ArticleFactory(sequelize);
 AssociateUserChurch();
 AssociateChurchEvent();
 AssociateEventTrigger();

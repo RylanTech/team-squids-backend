@@ -6,11 +6,12 @@ import churchUserRoutes from './routes/churchUserRoutes'
 import userRoutes from './routes/userRoutes'
 import eventRoutes from './routes/eventRoutes'
 import apiRoutes from './routes/apiRoutes'
+import articleRoutes from './routes/articleRoutes'
 import multer from 'multer';
 import path from 'path';
 import { ChurchUser } from './models/churchUser';
 import { verifyUser } from './services/authService';
-import { scheduleTaskEveryDay } from './services/timers';
+import { checkTimeAndExecute } from './services/timers';
 
 const app = express();
 
@@ -40,7 +41,7 @@ app.use('/api/church', churchRoutes);
 app.use('/api/user', churchUserRoutes);
 app.use('/api/appuser', userRoutes)
 app.use('/api/key', apiRoutes)
-// app.use('/api/search', locationRoutes); 
+app.use('/api/article', articleRoutes)
 app.get('/uploads/:filename', (req, res) => {
   const filename = req.params.filename;
   res.sendFile(filename, { root: 'uploads' }, (err) => {
@@ -83,9 +84,6 @@ db.sync({ alter:false }).then(() => {
   console.info("Connected to the database!")
 });
 
-//5:30pm EST
-scheduleTaskEveryDay("21:30", fireNoti, 1);
-//16 = noon EST
-//scheduleTaskEveryDay("16:14", fireNoti, 1);
+checkTimeAndExecute()
 
-app.listen(3000);
+app.listen(3001);
